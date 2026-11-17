@@ -661,7 +661,7 @@
     "id": "R96",
     "file": "src/testing/replay.ts",
     "description": "replay: pre-aborted signal not rejected",
-    "find": "    if (signal?.aborted === true) throw userAbort();\n",
+    "find": "    if (signal?.aborted === true) throw userAbort(fixture.meta.api);\n",
     "replace": ""
   },
   {
@@ -880,5 +880,12 @@
     "description": "Anthropic round trip effort dropped",
     "find": "        thinking: THINKING,\n        output_config: EFFORT,",
     "replace": "        thinking: THINKING,"
+  },
+  {
+    "id": "R128",
+    "file": "src/testing/replay.ts",
+    "description": "replay: abort error named the same for every SDK",
+    "find": "  if (api === \"messages\") error.name = \"APIUserAbortError\";\n",
+    "replace": ""
   }
 ]

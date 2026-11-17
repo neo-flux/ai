@@ -166,14 +166,19 @@ describe("replayClient: audit follow-ups", () => {
   test("an already-aborted signal rejects create() like the SDKs do", async () => {
     const controller = new AbortController();
     controller.abort();
-    const create = method(
-      replayClient(fixture("responses", [{ chunks: [{ n: 1 }] }])),
-      "responses.create",
-    );
-    const thrown = await create({}, { signal: controller.signal }).catch((e: unknown) => e);
-    expect(thrown).toBeInstanceOf(Error);
-    expect(thrown).toMatchObject({ name: "APIUserAbortError", message: "Request was aborted." });
-    expect((thrown as { status?: unknown }).status).toBeUndefined();
+    // openai's error classes never set `name`; @anthropic-ai/sdk sets the class name.
+    const cases: [FixtureApi, string, string][] = [
+      ["responses", "responses.create", "Error"],
+      ["chat.completions", "chat.completions.create", "Error"],
+      ["messages", "messages.create", "APIUserAbortError"],
+    ];
+    for (const [api, path, name] of cases) {
+      const create = method(replayClient(fixture(api, [{ chunks: [{ n: 1 }] }])), path);
+      const thrown = await create({}, { signal: controller.signal }).catch((e: unknown) => e);
+      expect(thrown).toBeInstanceOf(Error);
+      expect(thrown).toMatchObject({ name, message: "Request was aborted." });
+      expect((thrown as { status?: unknown }).status).toBeUndefined();
+    }
   });
 
   test("an abort just before a recorded stream error ends silently", async () => {

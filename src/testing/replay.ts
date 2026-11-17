@@ -67,9 +67,13 @@ const pause = (ms: number, signal: AbortSignal | undefined): Promise<void> =>
     signal?.addEventListener("abort", done, { once: true });
   });
 
-// What both SDKs reject with when the signal is already aborted at call time.
-const userAbort = (): Error =>
-  Object.assign(new Error("Request was aborted."), { name: "APIUserAbortError" });
+// What the SDKs reject with when the signal is already aborted at call time. openai's error
+// classes never set `name`; @anthropic-ai/sdk names each class.
+const userAbort = (api: Fixture["meta"]["api"]): Error => {
+  const error = new Error("Request was aborted.");
+  if (api === "messages") error.name = "APIUserAbortError";
+  return error;
+};
 
 export function replayClient(fixture: Fixture, replay: ReplayOptions = {}): ReplayClient {
   const calls: ReplayCall[] = [];
@@ -84,7 +88,7 @@ export function replayClient(fixture: Fixture, replay: ReplayOptions = {}): Repl
       );
     }
     const signal = signalOf(options);
-    if (signal?.aborted === true) throw userAbort();
+    if (signal?.aborted === true) throw userAbort(fixture.meta.api);
     const error = recorded.error;
     if (error?.phase === "create") throw rebuild(error.error);
     const chunks = recorded.chunks.map((chunk) => structuredClone(chunk));
