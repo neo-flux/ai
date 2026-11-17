@@ -531,3 +531,11 @@ export function checkFixtureCoverage(
   }
   return problems;
 }
+
+/** Replaces every credential-shaped substring with `[scrubbed]`. */
+export function redactSecrets(text: string): string {
+  return SECRET_PATTERNS.reduce(
+    (out, [, pattern]) => out.replace(new RegExp(pattern.source, "g"), "[scrubbed]"),
+    text,
+  );
+}

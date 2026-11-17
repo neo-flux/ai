@@ -397,5 +397,103 @@
     "description": "coverage: missing cases ignored",
     "find": "        problems.push(`${provider}: missing ${id}`);",
     "replace": "        void id;"
+  },
+  {
+    "id": "R58",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: id mapping not consistent",
+    "find": "    let placeholder = this.#ids.get(raw);",
+    "replace": "    let placeholder: string | undefined;"
+  },
+  {
+    "id": "R59",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: call_id not scrubbed",
+    "find": "  \"call_id\",\n",
+    "replace": ""
+  },
+  {
+    "id": "R60",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: encrypted_content not scrubbed",
+    "find": "const OPAQUE_KEYS = new Set([\"encrypted_content\", \"signature\"]);",
+    "replace": "const OPAQUE_KEYS = new Set([\"signature\"]);"
+  },
+  {
+    "id": "R61",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: signature not scrubbed",
+    "find": "const OPAQUE_KEYS = new Set([\"encrypted_content\", \"signature\"]);",
+    "replace": "const OPAQUE_KEYS = new Set([\"encrypted_content\"]);"
+  },
+  {
+    "id": "R62",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: redacted thinking data kept",
+    "find": "      if (key === \"data\" && parent?.type === \"redacted_thinking\") return this.opaque(value);\n",
+    "replace": ""
+  },
+  {
+    "id": "R63",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: forbidden fields kept",
+    "find": "    if (FORBIDDEN_FIXTURE_KEYS.includes(key)) return value === undefined ? undefined : null;\n",
+    "replace": ""
+  },
+  {
+    "id": "R64",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: timestamps kept",
+    "find": "    if (typeof value === \"number\" && TIME_KEYS.has(key)) return FIXED_TIME;\n",
+    "replace": ""
+  },
+  {
+    "id": "R65",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: credential scan skipped",
+    "find": "    return redactSecrets(value).replace(",
+    "replace": "    return value.replace("
+  },
+  {
+    "id": "R66",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: ids inside strings kept",
+    "find": "    return redactSecrets(value).replace(FIXTURE_ID_PATTERN, (match) => this.id(match));",
+    "replace": "    return redactSecrets(value);"
+  },
+  {
+    "id": "R67",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: not idempotent (placeholders renumbered)",
+    "find": "  id(raw: string): string {\n    if (isPlaceholder(raw)) return raw;",
+    "replace": "  id(raw: string): string {"
+  },
+  {
+    "id": "R68",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: headers not allowlisted",
+    "find": "    if (key === \"headers\") return allowlistHeaders(value);\n",
+    "replace": ""
+  },
+  {
+    "id": "R69",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: huge strings kept",
+    "find": "    if (value.length > MAX_STRING) return",
+    "replace": "    if (false) return"
+  },
+  {
+    "id": "R70",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: refusal on remaining leaks skipped",
+    "find": "  if (leaks.length > 0) {",
+    "replace": "  if (false) {"
+  },
+  {
+    "id": "R71",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: prefix not kept",
+    "find": "      const prefix = /^([A-Za-z]+[_-])/.exec(raw)?.[1] ?? \"id_\";",
+    "replace": "      const prefix = \"id_\";"
   }
 ]
