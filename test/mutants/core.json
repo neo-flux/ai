@@ -1,0 +1,611 @@
+[
+  {
+    "id": "C1",
+    "file": "src/errors.ts",
+    "description": "isAIError checks code instead of the brand",
+    "find": "(value as Record<symbol, unknown>)[BRAND] === true",
+    "replace": "typeof (value as Record<string, unknown>).code === \"string\""
+  },
+  {
+    "id": "C2",
+    "file": "src/errors.ts",
+    "description": "brand not shared across copies",
+    "find": "Symbol.for(\"neoflux.ai.error\")",
+    "replace": "Symbol(\"neoflux.ai.error\")"
+  },
+  {
+    "id": "C3",
+    "file": "src/errors.ts",
+    "description": "instanceof ignores the brand",
+    "find": "    return isAIError(value);\n",
+    "replace": "    return Function.prototype[Symbol.hasInstance].call(this, value);\n"
+  },
+  {
+    "id": "C4",
+    "file": "src/errors.ts",
+    "description": "rate_limit not retryable by default",
+    "find": "  rate_limit: true,",
+    "replace": "  rate_limit: false,"
+  },
+  {
+    "id": "C5",
+    "file": "src/errors.ts",
+    "description": "invalid_request retryable by default",
+    "find": "  invalid_request: false,",
+    "replace": "  invalid_request: true,"
+  },
+  {
+    "id": "C6",
+    "file": "src/errors.ts",
+    "description": "toJSON includes rawText",
+    "find": "    if (this.retryAfterMs !== undefined) json.retryAfterMs = this.retryAfterMs;\n    return json;",
+    "replace": "    if (this.retryAfterMs !== undefined) json.retryAfterMs = this.retryAfterMs;\n    (json as unknown as Record<string, unknown>).rawText = this.rawText;\n    return json;"
+  },
+  {
+    "id": "C7",
+    "file": "src/errors.ts",
+    "description": "rawText enumerable",
+    "find": "Object.defineProperty(this, \"rawText\", { value: options.rawText, enumerable: false });",
+    "replace": "Object.defineProperty(this, \"rawText\", { value: options.rawText, enumerable: true });"
+  },
+  {
+    "id": "C8",
+    "file": "src/errors.ts",
+    "description": "aborted can be made retryable",
+    "find": "options.code === \"aborted\" ? false : ",
+    "replace": ""
+  },
+  {
+    "id": "C9",
+    "file": "src/errors.ts",
+    "description": "caller abort ignored",
+    "find": "if (signal?.aborted === true) {",
+    "replace": "if (signal?.aborted === true && false) {"
+  },
+  {
+    "id": "C10",
+    "file": "src/errors.ts",
+    "description": "caller timeout reported as aborted",
+    "find": "code: timedOut ? \"timeout\" : \"aborted\",",
+    "replace": "code: \"aborted\","
+  },
+  {
+    "id": "C11",
+    "file": "src/errors.ts",
+    "description": "429 mapped to provider_unavailable",
+    "find": "if (status === 429) return \"rate_limit\";",
+    "replace": "if (status === 429) return \"provider_unavailable\";"
+  },
+  {
+    "id": "C12",
+    "file": "src/errors.ts",
+    "description": "5xx range starts above 500",
+    "find": "if (status >= 500 && status < 600)",
+    "replace": "if (status > 500 && status < 600)"
+  },
+  {
+    "id": "C13",
+    "file": "src/errors.ts",
+    "description": "403 not auth",
+    "find": "if (status === 401 || status === 403) return \"auth\";",
+    "replace": "if (status === 401) return \"auth\";"
+  },
+  {
+    "id": "C14",
+    "file": "src/errors.ts",
+    "description": "adapter classify ignored",
+    "find": "if (classified !== undefined) return",
+    "replace": "if (false) return"
+  },
+  {
+    "id": "C15",
+    "file": "src/errors.ts",
+    "description": "retry-after-ms ignored",
+    "find": "if (ms !== undefined && NUMBER.test(ms)) return",
+    "replace": "if (false) return"
+  },
+  {
+    "id": "C16",
+    "file": "src/errors.ts",
+    "description": "retry-after seconds not converted to ms",
+    "find": "return Number(value) * 1000;",
+    "replace": "return Number(value);"
+  },
+  {
+    "id": "C17",
+    "file": "src/errors.ts",
+    "description": "header lookup case-sensitive",
+    "find": "if (key.toLowerCase() !== wanted) continue;",
+    "replace": "if (key !== wanted) continue;"
+  },
+  {
+    "id": "C18",
+    "file": "src/errors.ts",
+    "description": "provider identifiers not filtered",
+    "find": "value !== undefined && IDENTIFIER.test(value) ? value : undefined",
+    "replace": "value"
+  },
+  {
+    "id": "C19",
+    "file": "src/events.ts",
+    "description": "event after terminal accepted",
+    "find": "    if (this.#terminated) throw fail(\"O1\");\n",
+    "replace": ""
+  },
+  {
+    "id": "C20",
+    "file": "src/events.ts",
+    "description": "missing terminal accepted",
+    "find": "    if (!this.#terminated) throw new EventOrderError(\"O1\", this.#index, undefined);\n",
+    "replace": ""
+  },
+  {
+    "id": "C21",
+    "file": "src/events.ts",
+    "description": "duplicate tool id accepted",
+    "find": "        if (this.#seen.has(e.id)) throw fail(\"O2\");\n",
+    "replace": ""
+  },
+  {
+    "id": "C22",
+    "file": "src/events.ts",
+    "description": "unended tool call at finish accepted",
+    "find": "        if (this.#open.size > 0) throw fail(\"O5\");\n",
+    "replace": ""
+  },
+  {
+    "id": "C23",
+    "file": "src/events.ts",
+    "description": "text-delta doesn't close reasoning",
+    "find": "      case \"text-delta\":\n        this.#reasoningOpen = false;\n        return;",
+    "replace": "      case \"text-delta\":\n        return;"
+  },
+  {
+    "id": "C24",
+    "file": "src/events.ts",
+    "description": "tool-calls finish without a tool call accepted",
+    "find": "        if (e.reason === \"tool-calls\" && this.#ended === 0) throw fail(\"O7\");\n",
+    "replace": ""
+  },
+  {
+    "id": "C25",
+    "file": "src/events.ts",
+    "description": "negative usage accepted",
+    "find": "(value as number) >= 0",
+    "replace": "(value as number) >= -1"
+  },
+  {
+    "id": "C26",
+    "file": "src/events.ts",
+    "description": "error event without an AIError accepted",
+    "find": "      return isAIError(event.error);",
+    "replace": "      return true;"
+  },
+  {
+    "id": "C27",
+    "file": "src/events.ts",
+    "description": "checker skips the end-of-stream O1 check",
+    "find": "    yield event;\n  }\n  order.end();",
+    "replace": "    yield event;\n  }"
+  },
+  {
+    "id": "C28",
+    "file": "src/usage.ts",
+    "description": "merge lets undefined erase",
+    "find": "if (value !== undefined) merged[field] = value;",
+    "replace": "merged[field] = value;"
+  },
+  {
+    "id": "C29",
+    "file": "src/usage.ts",
+    "description": "cache reads not added to input",
+    "find": ": plus(report.inputTokens, report.cachedInputTokens, report.cacheWriteTokens),",
+    "replace": ": plus(report.inputTokens, report.cacheWriteTokens),"
+  },
+  {
+    "id": "C30",
+    "file": "src/usage.ts",
+    "description": "cache writes not added to input",
+    "find": ": plus(report.inputTokens, report.cachedInputTokens, report.cacheWriteTokens),",
+    "replace": ": plus(report.inputTokens, report.cachedInputTokens),"
+  },
+  {
+    "id": "C31",
+    "file": "src/usage.ts",
+    "description": "reasoning not added to output",
+    "find": ": plus(report.outputTokens, report.reasoningTokens),",
+    "replace": ": report.outputTokens,"
+  },
+  {
+    "id": "C32",
+    "file": "src/usage.ts",
+    "description": "sum treats undefined as 0",
+    "find": "sum[field] = x === undefined || y === undefined ? undefined : x + y;",
+    "replace": "sum[field] = (x ?? 0) + (y ?? 0);"
+  },
+  {
+    "id": "C33",
+    "file": "src/usage.ts",
+    "description": "no report normalizes to zeros",
+    "find": "if (report === undefined) return { ...EMPTY_USAGE };",
+    "replace": "if (report === undefined) return { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheWriteTokens: 0, reasoningTokens: 0 };"
+  },
+  {
+    "id": "C34",
+    "file": "src/cost.ts",
+    "description": "cached input price falls back to 0",
+    "find": "cached * (price.cachedInput ?? price.input)",
+    "replace": "cached * (price.cachedInput ?? 0)"
+  },
+  {
+    "id": "C35",
+    "file": "src/cost.ts",
+    "description": "reasoning price falls back to input",
+    "find": "reasoning * (price.reasoning ?? price.output)",
+    "replace": "reasoning * (price.reasoning ?? price.input)"
+  },
+  {
+    "id": "C36",
+    "file": "src/cost.ts",
+    "description": "prices per thousand, not per million",
+    "find": "const PER = 1_000_000;",
+    "replace": "const PER = 1_000;"
+  },
+  {
+    "id": "C37",
+    "file": "src/cost.ts",
+    "description": "unknown totals cost 0",
+    "find": "if (inputTokens === undefined || outputTokens === undefined) return undefined;",
+    "replace": "if (inputTokens === undefined || outputTokens === undefined) return 0;"
+  },
+  {
+    "id": "C38",
+    "file": "src/cost.ts",
+    "description": "cached input not subtracted",
+    "find": "const uncached = inputTokens - cached - written;",
+    "replace": "const uncached = inputTokens - written;"
+  },
+  {
+    "id": "C39",
+    "file": "src/cost.ts",
+    "description": "inconsistent usage accepted",
+    "find": "if (uncached < 0 || visible < 0) {",
+    "replace": "if (false) {"
+  },
+  {
+    "id": "C40",
+    "file": "src/messages.ts",
+    "description": "system after other messages accepted",
+    "find": "if (seenNonSystem) throw invalid(",
+    "replace": "if (false) throw invalid("
+  },
+  {
+    "id": "C41",
+    "file": "src/messages.ts",
+    "description": "non-data: image string accepted",
+    "find": "if (!part.data.startsWith(\"data:\")) throw",
+    "replace": "if (false) throw"
+  },
+  {
+    "id": "C42",
+    "file": "src/messages.ts",
+    "description": "orphan tool message accepted",
+    "find": "if (!nonEmpty(message.toolCallId) || !calls.has(message.toolCallId)) {",
+    "replace": "if (!nonEmpty(message.toolCallId)) {"
+  },
+  {
+    "id": "C43",
+    "file": "src/messages.ts",
+    "description": "empty parts array accepted",
+    "find": "if (!Array.isArray(content) || content.length === 0) {",
+    "replace": "if (!Array.isArray(content)) {"
+  },
+  {
+    "id": "C44",
+    "file": "src/schema.ts",
+    "description": "output converter used instead of input",
+    "find": "result = schema[\"~standard\"].jsonSchema.input({ target });",
+    "replace": "result = schema[\"~standard\"].jsonSchema.output({ target });"
+  },
+  {
+    "id": "C45",
+    "file": "src/schema.ts",
+    "description": "target not passed to the converter",
+    "find": "result = schema[\"~standard\"].jsonSchema.input({ target });",
+    "replace": "result = schema[\"~standard\"].jsonSchema.input({ target: \"draft-2020-12\" });"
+  },
+  {
+    "id": "C46",
+    "file": "src/schema.ts",
+    "description": "own-property detection breaks Zod",
+    "find": "const standard = (value as Record<string, unknown>)[\"~standard\"];",
+    "replace": "const standard = Object.hasOwn(value, \"~standard\") ? (value as Record<string, unknown>)[\"~standard\"] : undefined;"
+  },
+  {
+    "id": "C47",
+    "file": "src/schema.ts",
+    "description": "validate called unbound",
+    "find": ".call(\n    p,\n    value,\n  )",
+    "replace": ".call(\n    undefined,\n    value,\n  )"
+  },
+  {
+    "id": "C48",
+    "file": "src/schema.ts",
+    "description": "issues ignored",
+    "find": "  if (result.issues) return { ok: false, issues: result.issues };\n",
+    "replace": ""
+  },
+  {
+    "id": "C49",
+    "file": "src/tools.ts",
+    "description": "empty arguments are invalid JSON",
+    "find": "  if (raw.trim() === \"\") return { ok: true, value: {} };\n",
+    "replace": ""
+  },
+  {
+    "id": "C50",
+    "file": "src/tools.ts",
+    "description": "tool input validation skipped",
+    "find": "result = await validate(tool.schema, parsed.value);",
+    "replace": "result = { ok: true, value: parsed.value };"
+  },
+  {
+    "id": "C51",
+    "file": "src/tools.ts",
+    "description": "inherited keys treated as tools",
+    "find": "Object.hasOwn(tools, name)",
+    "replace": "name in tools"
+  },
+  {
+    "id": "C52",
+    "file": "src/fold.ts",
+    "description": "reasoning metadata dropped",
+    "find": "this.#reasoning.providerMetadata = event.providerMetadata;",
+    "replace": "void 0;"
+  },
+  {
+    "id": "C53",
+    "file": "src/fold.ts",
+    "description": "tool-call metadata dropped from the part",
+    "find": "entry.part.providerMetadata = event.providerMetadata;",
+    "replace": "void 0;"
+  },
+  {
+    "id": "C54",
+    "file": "src/fold.ts",
+    "description": "text merged across other parts",
+    "find": "const last = this.#content.at(-1);",
+    "replace": "const last = this.#content.findLast((p) => p.type === \"text\");"
+  },
+  {
+    "id": "C55",
+    "file": "src/fold.ts",
+    "description": "finish metadata dropped",
+    "find": "this.#providerMetadata = event.providerMetadata;",
+    "replace": "void 0;"
+  },
+  {
+    "id": "C56",
+    "file": "src/run.ts",
+    "description": "fallback ignores retryable",
+    "find": "error.retryable && !delivered",
+    "replace": "!delivered"
+  },
+  {
+    "id": "C57",
+    "file": "src/run.ts",
+    "description": "fallback after the first delivered event",
+    "find": "!delivered && !signal.aborted",
+    "replace": "!signal.aborted"
+  },
+  {
+    "id": "C58",
+    "file": "src/run.ts",
+    "description": "fallback despite a caller abort",
+    "find": "&& !signal.aborted && i <",
+    "replace": "&& i <"
+  },
+  {
+    "id": "C59",
+    "file": "src/run.ts",
+    "description": "beforeRequest result discarded",
+    "find": "        request = replaced;\n",
+    "replace": ""
+  },
+  {
+    "id": "C60",
+    "file": "src/run.ts",
+    "description": "resolveModel result ignored",
+    "find": "if (hooks.resolveModel !== undefined) models = await hooks.resolveModel(",
+    "replace": "if (hooks.resolveModel !== undefined) await hooks.resolveModel("
+  },
+  {
+    "id": "C61",
+    "file": "src/run.ts",
+    "description": "onUsage skipped for failed attempts",
+    "find": "if (hooks.onUsage !== undefined) await hooks.onUsage(",
+    "replace": "if (hooks.onUsage !== undefined && failure === undefined) await hooks.onUsage("
+  },
+  {
+    "id": "C62",
+    "file": "src/run.ts",
+    "description": "onUsage errors swallowed",
+    "find": "if (hooks.onUsage !== undefined) await hooks.onUsage({ usage, cost, ctx });",
+    "replace": "if (hooks.onUsage !== undefined) try { await hooks.onUsage({ usage, cost, ctx }); } catch {}"
+  },
+  {
+    "id": "C63",
+    "file": "src/run.ts",
+    "description": "onError errors swallowed",
+    "find": "if (hooks.onError !== undefined) await hooks.onError(error, { ...ctx, willFallback });",
+    "replace": "if (hooks.onError !== undefined) try { await hooks.onError(error, { ...ctx, willFallback }); } catch {}"
+  },
+  {
+    "id": "C64",
+    "file": "src/run.ts",
+    "description": "event order not enforced",
+    "find": "        order.push(event);\n",
+    "replace": ""
+  },
+  {
+    "id": "C65",
+    "file": "src/run.ts",
+    "description": "messages not validated",
+    "find": "      validateMessages(options.messages);\n",
+    "replace": ""
+  },
+  {
+    "id": "C66",
+    "file": "src/run.ts",
+    "description": "finish not held back",
+    "find": "          held = event;\n          continue;",
+    "replace": "          held = event;"
+  },
+  {
+    "id": "C67",
+    "file": "src/run.ts",
+    "description": "output accepted by streamText",
+    "find": "} else if (\"output\" in options && internal.output === undefined) {",
+    "replace": "} else if (false) {"
+  },
+  {
+    "id": "C68",
+    "file": "src/run.ts",
+    "description": "waits on a stuck adapter's cleanup",
+    "find": "await close(iterator, step?.settled !== false);",
+    "replace": "await close(iterator, true);"
+  },
+  {
+    "id": "C69",
+    "file": "src/run.ts",
+    "description": "adapter not raced against the signal",
+    "find": "    signal.addEventListener(\"abort\", onAbort, { once: true });\n    iterator.next()",
+    "replace": "    iterator.next()"
+  },
+  {
+    "id": "C70",
+    "file": "src/run.ts",
+    "description": "no abort check between attempts",
+    "find": "    if (signal.aborted) {\n      const error = toAIError(signal.reason, { provider, signal });",
+    "replace": "    if (false) {\n      const error = toAIError(signal.reason, { provider, signal });"
+  },
+  {
+    "id": "C71",
+    "file": "src/run.ts",
+    "description": "adapter error classification not passed",
+    "find": "classify: modelRef.adapter.classifyError, ",
+    "replace": ""
+  },
+  {
+    "id": "C72",
+    "file": "src/stream-text.ts",
+    "description": "break doesn't abort the request",
+    "find": "        this.#controller.abort();\n",
+    "replace": ""
+  },
+  {
+    "id": "C73",
+    "file": "src/stream-text.ts",
+    "description": "second iterator allowed",
+    "find": "if (this.#iterated) throw new TypeError(",
+    "replace": "if (false) throw new TypeError("
+  },
+  {
+    "id": "C74",
+    "file": "src/stream-text.ts",
+    "description": "failed outcome left unhandled",
+    "find": "    outcome.catch(() => {});\n    this.#started",
+    "replace": "    this.#started"
+  },
+  {
+    "id": "C75",
+    "file": "src/stream-text.ts",
+    "description": "eager start",
+    "find": "    this.#internal = internal;\n  }",
+    "replace": "    this.#internal = internal;\n    this.#start();\n  }"
+  },
+  {
+    "id": "C76",
+    "file": "src/stream-text.ts",
+    "description": "hook error swallowed by the iterator",
+    "find": "            throw this.#failure.value;",
+    "replace": "            break;"
+  },
+  {
+    "id": "C77",
+    "file": "src/generate.ts",
+    "description": "no repair attempt",
+    "find": "  const messages: Message[] = [",
+    "replace": "  if (!parsed.ok) throw new AIError({ code: \"output_validation\", rawText: result.text });\n  const messages: Message[] = ["
+  },
+  {
+    "id": "C78",
+    "file": "src/generate.ts",
+    "description": "repair goes back through the chain",
+    "find": "fixedModels: [result.modelRef]",
+    "replace": "fixedModels: undefined"
+  },
+  {
+    "id": "C79",
+    "file": "src/generate.ts",
+    "description": "repair usage not summed",
+    "find": "const usage = sumUsage(result.usage, repaired.usage);",
+    "replace": "const usage = repaired.usage;"
+  },
+  {
+    "id": "C80",
+    "file": "src/generate.ts",
+    "description": "repair cost not summed",
+    "find": "const cost = sumCost(result.cost, repaired.cost);",
+    "replace": "const cost = repaired.cost;"
+  },
+  {
+    "id": "C81",
+    "file": "src/generate.ts",
+    "description": "rawText from the first attempt",
+    "find": "rawText: repaired.text,",
+    "replace": "rawText: result.text,"
+  },
+  {
+    "id": "C82",
+    "file": "src/generate.ts",
+    "description": "repair attempt marked initial",
+    "find": "{ output, kind: \"repair\",",
+    "replace": "{ output, kind: \"initial\","
+  },
+  {
+    "id": "C83",
+    "file": "src/generate.ts",
+    "description": "repair attempt numbering restarts",
+    "find": "attemptStart: first.attempts,",
+    "replace": "attemptStart: 0,"
+  },
+  {
+    "id": "C84",
+    "file": "src/generate.ts",
+    "description": "Markdown fence not stripped",
+    "find": "const body = FENCE.exec(trimmed)?.[1] ?? trimmed;",
+    "replace": "const body = trimmed;"
+  },
+  {
+    "id": "C85",
+    "file": "src/testing/fake-adapter.ts",
+    "description": "fakeAdapter ignores the signal",
+    "find": "          if (ctx.signal.aborted) throw abortError(ctx.signal);\n",
+    "replace": ""
+  },
+  {
+    "id": "C86",
+    "file": "src/adapter.ts",
+    "description": "provider JSON Schema target ignored",
+    "find": "defaults.jsonSchemaTarget ?? \"draft-2020-12\"",
+    "replace": "\"draft-2020-12\""
+  },
+  {
+    "id": "C87",
+    "file": "scripts/mutate.ts",
+    "description": "duplicate ids across files accepted",
+    "find": "  if (errors.length === 0) errors.push(...validateMutants(mutants));\n",
+    "replace": ""
+  }
+]
