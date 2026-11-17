@@ -10,12 +10,18 @@ export type AIErrorCode =
   | "invalid_request"
   | "output_validation"
   | "aborted"
-  | "unknown";
+  | "unknown"
+  | "billing";
 
 export interface AIErrorOptions {
   code: AIErrorCode;
   /** Defaults per code: rate_limit, timeout and provider_unavailable are retryable. */
   retryable?: boolean | undefined;
+  /**
+   * Whether the next model in a fallback chain may be tried. Defaults per code: rate_limit, timeout,
+   * provider_unavailable, auth and billing fail over. Always false for aborted.
+   */
+  failover?: boolean | undefined;
   provider?: string | undefined;
   status?: number | undefined;
   providerCode?: string | undefined;
@@ -37,6 +43,7 @@ export interface AIErrorJSON {
   name: "AIError";
   code: AIErrorCode;
   retryable: boolean;
+  failover: boolean;
   provider?: string;
   status?: number;
   providerCode?: string;
@@ -70,6 +77,22 @@ const RETRYABLE: Record<AIErrorCode, boolean> = {
   output_validation: false,
   aborted: false,
   unknown: false,
+  billing: false,
+};
+
+// A failure at one provider that says nothing about the next one.
+const FAILOVER: Record<AIErrorCode, boolean> = {
+  rate_limit: true,
+  timeout: true,
+  provider_unavailable: true,
+  auth: true,
+  billing: true,
+  context_length: false,
+  content_filter: false,
+  invalid_request: false,
+  output_validation: false,
+  aborted: false,
+  unknown: false,
 };
 
 // Provider-supplied identifiers are kept only when they can't carry free text.
@@ -93,6 +116,7 @@ export class AIError extends Error {
   override readonly name: "AIError" = "AIError";
   readonly code: AIErrorCode;
   readonly retryable: boolean;
+  readonly failover: boolean;
   readonly provider: string | undefined;
   readonly status: number | undefined;
   readonly providerCode: string | undefined;
@@ -113,6 +137,8 @@ export class AIError extends Error {
     this.code = options.code;
     this.retryable =
       options.code === "aborted" ? false : (options.retryable ?? RETRYABLE[options.code]);
+    this.failover =
+      options.code === "aborted" ? false : (options.failover ?? FAILOVER[options.code]);
     this.provider = provider;
     this.status = options.status;
     this.providerCode = identifier(options.providerCode);
@@ -126,7 +152,12 @@ export class AIError extends Error {
   }
 
   toJSON(): AIErrorJSON {
-    const json: AIErrorJSON = { name: "AIError", code: this.code, retryable: this.retryable };
+    const json: AIErrorJSON = {
+      name: "AIError",
+      code: this.code,
+      retryable: this.retryable,
+      failover: this.failover,
+    };
     if (this.provider !== undefined) json.provider = this.provider;
     if (this.status !== undefined) json.status = this.status;
     if (this.providerCode !== undefined) json.providerCode = this.providerCode;
@@ -193,6 +224,7 @@ export interface ErrorShape {
 export interface Classification {
   code: AIErrorCode;
   retryable?: boolean | undefined;
+  failover?: boolean | undefined;
 }
 
 export interface ToAIErrorOptions {
@@ -239,6 +271,8 @@ export function toAIError(error: unknown, options: ToAIErrorOptions): AIError {
     return new AIError({
       code: timedOut ? "timeout" : "aborted",
       retryable: false,
+      // The caller's own signal ended the call, so the next model can't help.
+      failover: false,
       provider,
       providerError: error,
     });

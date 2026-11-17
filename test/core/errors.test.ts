@@ -39,6 +39,7 @@ describe("AIError", () => {
       output_validation: false,
       aborted: false,
       unknown: false,
+      billing: false,
     };
     for (const [code, retryable] of Object.entries(expected)) {
       expect({ code, retryable: new AIError({ code: code as AIErrorCode }).retryable }).toEqual({
@@ -46,6 +47,38 @@ describe("AIError", () => {
         retryable,
       });
     }
+  });
+
+  test("default failover per code", () => {
+    const expected: Record<AIErrorCode, boolean> = {
+      rate_limit: true,
+      timeout: true,
+      provider_unavailable: true,
+      auth: true,
+      billing: true,
+      context_length: false,
+      content_filter: false,
+      invalid_request: false,
+      output_validation: false,
+      aborted: false,
+      unknown: false,
+    };
+    for (const [code, failover] of Object.entries(expected)) {
+      expect({ code, failover: new AIError({ code: code as AIErrorCode }).failover }).toEqual({
+        code,
+        failover,
+      });
+    }
+  });
+
+  test("failover is independent of retryable and can be overridden, except for aborted", () => {
+    const billing = new AIError({ code: "billing" });
+    expect([billing.retryable, billing.failover]).toEqual([false, true]);
+    expect(new AIError({ code: "rate_limit", failover: false }).failover).toBe(false);
+    expect(new AIError({ code: "rate_limit", failover: false }).retryable).toBe(true);
+    expect(new AIError({ code: "unknown", failover: true }).failover).toBe(true);
+    expect(new AIError({ code: "unknown", failover: true }).retryable).toBe(false);
+    expect(new AIError({ code: "aborted", failover: true }).failover).toBe(false);
   });
 
   test("retryable can be overridden, except for aborted", () => {
@@ -96,6 +129,7 @@ describe("AIError", () => {
       name: "AIError",
       code: "rate_limit",
       retryable: true,
+      failover: true,
       provider: "openai",
       status: 429,
       providerCode: "rate_limit_exceeded",
@@ -106,6 +140,7 @@ describe("AIError", () => {
       name: "AIError",
       code: "auth",
       retryable: false,
+      failover: true,
     });
   });
 
@@ -327,6 +362,16 @@ describe("toAIError", () => {
     expect(err.retryable).toBe(false);
   });
 
+  test("classify may set billing and override failover", () => {
+    const billing = toAIError(http(402), { provider, classify: () => ({ code: "billing" }) });
+    expect([billing.code, billing.retryable, billing.failover]).toEqual(["billing", false, true]);
+    const pinned = toAIError(http(503), {
+      provider,
+      classify: () => ({ code: "provider_unavailable", failover: false }),
+    });
+    expect([pinned.retryable, pinned.failover]).toEqual([true, false]);
+  });
+
   test("classify returning undefined falls back to status", () => {
     expect(toAIError(http(401), { provider, classify: () => undefined }).code).toBe("auth");
   });
@@ -344,6 +389,7 @@ describe("toAIError", () => {
     const err = toAIError(thrown, { provider, signal: controller.signal });
     expect(err.code).toBe("aborted");
     expect(err.retryable).toBe(false);
+    expect(err.failover).toBe(false);
     expect(getProviderError(err)).toBe(thrown);
     expect(inspect(err, { showHidden: true })).not.toContain("PROMPT:");
   });
@@ -355,6 +401,8 @@ describe("toAIError", () => {
     const err = toAIError({ name: "AbortError" }, { provider, signal });
     expect(err.code).toBe("timeout");
     expect(err.retryable).toBe(false);
+    // The caller's own deadline passed, so the next model can't meet it either.
+    expect(err.failover).toBe(false);
   });
 
   test("TimeoutError without a caller abort is a retryable timeout", () => {

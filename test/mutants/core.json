@@ -24,15 +24,15 @@
     "id": "C4",
     "file": "src/errors.ts",
     "description": "rate_limit not retryable by default",
-    "find": "  rate_limit: true,",
-    "replace": "  rate_limit: false,"
+    "find": "RETRYABLE: Record<AIErrorCode, boolean> = {\n  rate_limit: true,",
+    "replace": "RETRYABLE: Record<AIErrorCode, boolean> = {\n  rate_limit: false,"
   },
   {
     "id": "C5",
     "file": "src/errors.ts",
     "description": "invalid_request retryable by default",
-    "find": "  invalid_request: false,",
-    "replace": "  invalid_request: true,"
+    "find": "  invalid_request: false,\n  output_validation: false,\n  aborted: false,\n  unknown: false,\n  billing: false,",
+    "replace": "  invalid_request: true,\n  output_validation: false,\n  aborted: false,\n  unknown: false,\n  billing: false,"
   },
   {
     "id": "C6",
@@ -52,8 +52,8 @@
     "id": "C8",
     "file": "src/errors.ts",
     "description": "aborted can be made retryable",
-    "find": "options.code === \"aborted\" ? false : ",
-    "replace": ""
+    "find": "options.code === \"aborted\" ? false : (options.retryable",
+    "replace": "(options.retryable"
   },
   {
     "id": "C9",
@@ -838,5 +838,54 @@
     "description": "provider error not recorded",
     "find": "    if (\"providerError\" in options) providerErrors.set(this, options.providerError);\n",
     "replace": ""
+  },
+  {
+    "id": "F2",
+    "file": "src/errors.ts",
+    "description": "auth does not fail over",
+    "find": "  provider_unavailable: true,\n  auth: true,",
+    "replace": "  provider_unavailable: true,\n  auth: false,"
+  },
+  {
+    "id": "F3",
+    "file": "src/errors.ts",
+    "description": "billing does not fail over",
+    "find": "  auth: true,\n  billing: true,",
+    "replace": "  auth: true,\n  billing: false,"
+  },
+  {
+    "id": "F4",
+    "file": "src/errors.ts",
+    "description": "billing retryable by default",
+    "find": "  unknown: false,\n  billing: false,",
+    "replace": "  unknown: false,\n  billing: true,"
+  },
+  {
+    "id": "F5",
+    "file": "src/errors.ts",
+    "description": "failover override ignored",
+    "find": "(options.failover ?? FAILOVER[options.code])",
+    "replace": "FAILOVER[options.code]"
+  },
+  {
+    "id": "F6",
+    "file": "src/errors.ts",
+    "description": "caller abort or timeout fails over",
+    "find": "      failover: false,\n      provider,\n      providerError: error,",
+    "replace": "      provider,\n      providerError: error,"
+  },
+  {
+    "id": "F7",
+    "file": "src/errors.ts",
+    "description": "invalid_request fails over",
+    "find": "  content_filter: false,\n  invalid_request: false,\n  output_validation: false,\n  aborted: false,\n  unknown: false,\n};",
+    "replace": "  content_filter: false,\n  invalid_request: true,\n  output_validation: false,\n  aborted: false,\n  unknown: false,\n};"
+  },
+  {
+    "id": "F8",
+    "file": "src/errors.ts",
+    "description": "aborted failover can be overridden",
+    "find": "options.code === \"aborted\" ? false : (options.failover",
+    "replace": "(options.failover"
   }
 ]
