@@ -495,5 +495,75 @@
     "description": "scrub: prefix not kept",
     "find": "      const prefix = /^([A-Za-z]+[_-])/.exec(raw)?.[1] ?? \"id_\";",
     "replace": "      const prefix = \"id_\";"
+  },
+  {
+    "id": "R72",
+    "file": "scripts/recorder/cli.ts",
+    "description": "cli: missing base URL accepted",
+    "find": "  deepseek: [\"DEEPSEEK_API_KEY\", \"NEOFLUX_AI_DEEPSEEK_BASE_URL\"],",
+    "replace": "  deepseek: [\"DEEPSEEK_API_KEY\"],"
+  },
+  {
+    "id": "R73",
+    "file": "scripts/recorder/cli.ts",
+    "description": "cli: empty variables accepted",
+    "find": ".filter((name) => (env[name] ?? \"\") === \"\")",
+    "replace": ".filter((name) => env[name] === undefined)"
+  },
+  {
+    "id": "R74",
+    "file": "scripts/recorder/cli.ts",
+    "description": "cli: opt-in cases planned by default",
+    "find": "filter((id) => !OPT_IN.includes(id) || args.include.includes(id))",
+    "replace": "filter(() => true)"
+  },
+  {
+    "id": "R75",
+    "file": "scripts/recorder/cli.ts",
+    "description": "cli: config params not merged",
+    "find": "spec: withParams(spec, model.params)",
+    "replace": "spec"
+  },
+  {
+    "id": "R76",
+    "file": "scripts/recorder/cli.ts",
+    "description": "cli: unknown case accepted",
+    "find": "      if (spec === undefined) throw new Error(`${provider} has no case ${caseId}`);",
+    "replace": "      if (spec === undefined) return { provider, caseId, model: modelFor(config, caseId), spec: specs[0] as CaseSpec };"
+  },
+  {
+    "id": "R77",
+    "file": "scripts/recorder/cli.ts",
+    "description": "cli: plan total miscounted",
+    "find": "  const total = planned.reduce((sum, p) => sum + p.spec.turns, 0);",
+    "replace": "  const total = planned.length;"
+  },
+  {
+    "id": "R78",
+    "file": "scripts/recorder/cli.ts",
+    "description": "cli: qwen pagination stops after one page",
+    "find": "    if (models.length === 0 || page * pageSize >= (body.output?.total ?? 0)) return;",
+    "replace": "    return;"
+  },
+  {
+    "id": "R79",
+    "file": "scripts/recorder/cli.ts",
+    "description": "cli: qwen list sent without the key",
+    "find": "      headers: { Authorization: `Bearer ${key}` },\n",
+    "replace": ""
+  },
+  {
+    "id": "R80",
+    "file": "scripts/recorder/cli.ts",
+    "description": "cli: refused files written anyway",
+    "find": "        const out = scrubText(readFileSync(join(raw, file), \"utf8\"));",
+    "replace": "        const text = readFileSync(join(raw, file), \"utf8\");\n        let out = text;\n        try {\n          out = scrubText(text);\n        } catch {}"
+  },
+  {
+    "id": "R81",
+    "file": "scripts/recorder/cli.ts",
+    "description": "cli: non-OK models list accepted",
+    "find": "    if (!response.ok) throw",
+    "replace": "    if (false) throw"
   }
 ]

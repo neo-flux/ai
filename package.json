@@ -34,7 +34,10 @@
     "pack:check": "bun scripts/pack-check.ts",
     "smoke": "bun scripts/smoke.ts",
     "mutate": "bun scripts/mutate.ts test/mutants/core.json test/mutants/guards.json test/mutants/recorder.json",
-    "check": "bun run typecheck && bun run lint && bun run test && bun run pack:check && bun run smoke"
+    "check": "bun run typecheck && bun run lint && bun run test && bun run pack:check && bun run smoke",
+    "record": "bun scripts/record.ts",
+    "scrub": "bun scripts/scrub.ts",
+    "fixtures:check": "bun test test/fixture-guard.test.ts"
   },
   "peerDependencies": {
     "@anthropic-ai/sdk": "^1.0.0",
