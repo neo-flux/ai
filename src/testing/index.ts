@@ -24,4 +24,9 @@ export {
   type RecordedError,
   serializeFixture,
 } from "./fixture.ts";
-export { type ReplayCall, type ReplayClient, replayClient } from "./replay.ts";
+export {
+  type ReplayCall,
+  type ReplayClient,
+  type ReplayOptions,
+  replayClient,
+} from "./replay.ts";

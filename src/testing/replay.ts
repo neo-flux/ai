@@ -35,7 +35,35 @@ function signalOf(options: unknown): AbortSignal | undefined {
   return signal instanceof AbortSignal ? signal : undefined;
 }
 
-export function replayClient(fixture: Fixture): ReplayClient {
+export interface ReplayOptions {
+  /**
+   * Wait this long before each chunk. Without it every chunk is served in microtasks, so an abort
+   * scheduled with a timer can only land before or after the whole stream.
+   */
+  chunkDelayMs?: number | undefined;
+}
+
+// Resolves after `ms`, or early when the signal aborts. Never rejects.
+const pause = (ms: number, signal: AbortSignal | undefined): Promise<void> =>
+  new Promise((resolve) => {
+    if (signal?.aborted === true) {
+      resolve();
+      return;
+    }
+    const done = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    signal?.addEventListener("abort", done, { once: true });
+  });
+
+// What both SDKs reject with when the signal is already aborted at call time.
+const userAbort = (): Error =>
+  Object.assign(new Error("Request was aborted."), { name: "APIUserAbortError" });
+
+export function replayClient(fixture: Fixture, replay: ReplayOptions = {}): ReplayClient {
   const calls: ReplayCall[] = [];
 
   const create: Create = async (params, options) => {
@@ -47,13 +75,15 @@ export function replayClient(fixture: Fixture): ReplayClient {
         `replay: fixture has ${fixture.calls.length} call(s), call ${index + 1} requested`,
       );
     }
+    const signal = signalOf(options);
+    if (signal?.aborted === true) throw userAbort();
     const error = recorded.error;
     if (error?.phase === "create") throw rebuild(error.error);
-    const signal = signalOf(options);
     const chunks = recorded.chunks.map((chunk) => structuredClone(chunk));
     return {
       async *[Symbol.asyncIterator]() {
         for (const chunk of chunks) {
+          if (replay.chunkDelayMs !== undefined) await pause(replay.chunkDelayMs, signal);
           // Both SDKs end the iteration without throwing when the caller aborts.
           if (signal?.aborted === true) return;
           yield chunk;

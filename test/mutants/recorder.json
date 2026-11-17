@@ -663,5 +663,33 @@
     "description": "Anthropic reasoning round trip forces the tool",
     "find": "        tool_choice: { type: \"auto\" as const },",
     "replace": "        tool_choice: { type: \"tool\" as const, name: WEATHER.name },"
+  },
+  {
+    "id": "R96",
+    "file": "src/testing/replay.ts",
+    "description": "replay: pre-aborted signal not rejected",
+    "find": "    if (signal?.aborted === true) throw userAbort();\n",
+    "replace": ""
+  },
+  {
+    "id": "R97",
+    "file": "src/testing/replay.ts",
+    "description": "replay: chunk delay ignored",
+    "find": "          if (replay.chunkDelayMs !== undefined) await pause(replay.chunkDelayMs, signal);\n",
+    "replace": ""
+  },
+  {
+    "id": "R98",
+    "file": "src/testing/replay.ts",
+    "description": "replay: abort before a stream error still throws",
+    "find": "        if (signal?.aborted === true) return;\n        if (error !== undefined) throw rebuild(error.error);",
+    "replace": "        if (error !== undefined) throw rebuild(error.error);"
+  },
+  {
+    "id": "R99",
+    "file": "src/testing/replay.ts",
+    "description": "replay: rebuilt error drops recorded fields",
+    "find": "  const error = Object.assign(new Error(message ?? \"\"), fields, {",
+    "replace": "  const error = Object.assign(new Error(message ?? \"\"), {"
   }
 ]

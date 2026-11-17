@@ -34,7 +34,7 @@ One JSON object per line. The format is unstable while the package is 0.x.
 - `error.phase` is `create` when the SDK call itself rejected, which is how HTTP errors arrive. It is `stream` when iteration threw after `afterChunks` items, which is how errors sent mid-stream arrive. Those carry no HTTP status.
 - `error.error` keeps the SDK error's shape: `name`, `status`, `message`, the SDK's `.error` value, and `code`, `type`, `param`, `errorCode`, `details` and `apiMessage` when the SDK has them. Headers are reduced to the allowlist below.
 
-`@neoflux/ai/testing` exports `parseFixture`, `serializeFixture` and `replayClient`. `replayClient(fixture)` is a stand-in for the SDK client with only the recorded API's `create` method. It serves the recorded calls in order and honours `signal` the way the SDKs do. It throws recorded errors as `Error`s with the same fields, and `headers` as a `Headers`.
+`@neoflux/ai/testing` exports `parseFixture`, `serializeFixture` and `replayClient`. `replayClient(fixture)` is a stand-in for the SDK client with only the recorded API's `create` method. It serves the recorded calls in order and honours `signal` the way the SDKs do. It throws recorded errors as `Error`s with the same fields, and `headers` as a `Headers`. A signal that is already aborted when `create()` is called rejects with `APIUserAbortError`, as both SDKs do. Chunks are served in microtasks, so an abort scheduled with a timer can't land mid-stream. Pass `replayClient(fixture, { chunkDelayMs })` when a test needs that.
 
 ## Cases
 

@@ -161,3 +161,89 @@ describe("replayClient", () => {
     await expect(create({})).rejects.toThrow("replay: fixture has 1 call(s), call 2 requested");
   });
 });
+
+describe("replayClient: audit follow-ups", () => {
+  test("an already-aborted signal rejects create() like the SDKs do", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const create = method(
+      replayClient(fixture("responses", [{ chunks: [{ n: 1 }] }])),
+      "responses.create",
+    );
+    const thrown = await create({}, { signal: controller.signal }).catch((e: unknown) => e);
+    expect(thrown).toBeInstanceOf(Error);
+    expect(thrown).toMatchObject({ name: "APIUserAbortError", message: "Request was aborted." });
+    expect((thrown as { status?: unknown }).status).toBeUndefined();
+  });
+
+  test("an abort just before a recorded stream error ends silently", async () => {
+    const controller = new AbortController();
+    const create = method(
+      replayClient(
+        fixture("messages", [
+          {
+            chunks: [{ n: 1 }],
+            outcome: "threw",
+            error: { phase: "stream", afterChunks: 1, error: recordedError },
+          },
+        ]),
+      ),
+      "messages.create",
+    );
+    const seen: unknown[] = [];
+    for await (const item of await create({}, { signal: controller.signal })) {
+      seen.push(item);
+      controller.abort();
+    }
+    expect(seen).toEqual([{ n: 1 }]);
+  });
+
+  test("the rebuilt error keeps every recorded field", async () => {
+    const create = method(
+      replayClient(
+        fixture("responses", [
+          {
+            outcome: "threw",
+            error: {
+              phase: "create",
+              afterChunks: 0,
+              error: { ...recordedError, errorCode: "ec", details: { d: 1 }, apiMessage: "am" },
+            },
+          },
+        ]),
+      ),
+      "responses.create",
+    );
+    const thrown = (await create({}).catch((e: unknown) => e)) as Record<string, unknown>;
+    expect(thrown.error).toEqual(recordedError.error);
+    expect(thrown.code).toBe("rate_limit_exceeded");
+    expect(thrown.param).toBeNull();
+    expect(thrown.errorCode).toBe("ec");
+    expect(thrown.details).toEqual({ d: 1 });
+    expect(thrown.apiMessage).toBe("am");
+  });
+
+  test("chunkDelayMs spaces chunks out so a timed abort can land mid-stream", async () => {
+    const controller = new AbortController();
+    const create = method(
+      replayClient(fixture("messages", [{ chunks: [{ n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }] }]), {
+        chunkDelayMs: 40,
+      }),
+      "messages.create",
+    );
+    setTimeout(() => controller.abort(), 60);
+    const started = Date.now();
+    const seen = await drain(await create({}, { signal: controller.signal }));
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.length).toBeLessThan(4);
+    expect(Date.now() - started).toBeLessThan(150);
+  });
+
+  test("without chunkDelayMs every chunk is served without timers", async () => {
+    const create = method(
+      replayClient(fixture("messages", [{ chunks: [{ n: 1 }, { n: 2 }] }])),
+      "messages.create",
+    );
+    expect(await drain(await create({}))).toEqual([{ n: 1 }, { n: 2 }]);
+  });
+});
