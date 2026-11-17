@@ -4,12 +4,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { casesFor } from "../../scripts/recorder/cases.ts";
 import {
+  clientOptions,
   formatPlan,
   listQwenModels,
   missingEnv,
   parseRecordArgs,
   plan,
   scrubAll,
+  unsafeEnv,
   withParams,
 } from "../../scripts/recorder/cli.ts";
 import type { ProviderModels } from "../../scripts/recorder/models.ts";
@@ -215,5 +217,70 @@ describe("scrubAll", () => {
   test("an absent raw directory scrubs nothing", () => {
     root = mkdtempSync(join(tmpdir(), "neoflux-ai-scrub-"));
     expect(scrubAll(root)).toEqual({ written: [], refused: [] });
+  });
+});
+
+describe("unsafeEnv", () => {
+  test("refuses SDK variables that redirect requests or add credentials and headers", () => {
+    const risky = [
+      "OPENAI_BASE_URL",
+      "OPENAI_CUSTOM_HEADERS",
+      "OPENAI_ORG_ID",
+      "OPENAI_PROJECT_ID",
+      "ANTHROPIC_BASE_URL",
+      "ANTHROPIC_CUSTOM_HEADERS",
+      "ANTHROPIC_AUTH_TOKEN",
+      "ANTHROPIC_OPEN_TELEMETRY",
+    ];
+    for (const name of risky) {
+      expect({ name, problems: unsafeEnv(["openai"], { [name]: "x" }) }).toEqual({
+        name,
+        problems: [`${name} is set; unset it before recording`],
+      });
+    }
+    expect(unsafeEnv(["openai"], { OPENAI_API_KEY: "k", OPENAI_LOG: "debug" })).toEqual([]);
+  });
+
+  test("requires https for every configured URL", () => {
+    expect(
+      unsafeEnv(["deepseek", "qwen"], {
+        NEOFLUX_AI_DEEPSEEK_BASE_URL: "http://proxy.example",
+        NEOFLUX_AI_QWEN_BASE_URL: "https://ok.example/v1",
+        NEOFLUX_AI_QWEN_MODELS_URL: "ftp://x",
+      }),
+    ).toEqual([
+      "NEOFLUX_AI_DEEPSEEK_BASE_URL must be an https URL",
+      "NEOFLUX_AI_QWEN_MODELS_URL must be an https URL",
+    ]);
+    expect(unsafeEnv(["deepseek"], { NEOFLUX_AI_DEEPSEEK_BASE_URL: "not a url" })).toEqual([
+      "NEOFLUX_AI_DEEPSEEK_BASE_URL must be an https URL",
+    ]);
+  });
+});
+
+describe("clientOptions", () => {
+  test("pins base URLs and switches off every ambient credential and header source", () => {
+    expect(clientOptions("openai", "k", {})).toEqual({
+      apiKey: "k",
+      maxRetries: 0,
+      baseURL: "https://api.openai.com/v1",
+      organization: null,
+      project: null,
+    });
+    expect(
+      clientOptions("deepseek", "k", { NEOFLUX_AI_DEEPSEEK_BASE_URL: "https://d.example" }),
+    ).toEqual({
+      apiKey: "k",
+      maxRetries: 0,
+      baseURL: "https://d.example",
+      organization: null,
+      project: null,
+    });
+    expect(clientOptions("anthropic", "k", {})).toEqual({
+      apiKey: "k",
+      maxRetries: 0,
+      baseURL: "https://api.anthropic.com",
+      authToken: null,
+    });
   });
 });

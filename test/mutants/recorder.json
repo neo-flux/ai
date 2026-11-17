@@ -712,5 +712,47 @@
     "description": "outcome taken from the plan, not the signal",
     "find": "    if (controller.signal.aborted) call.outcome = \"returned-after-abort\";",
     "replace": "    if (planned.abortAfterChunks !== undefined) call.outcome = \"returned-after-abort\";"
+  },
+  {
+    "id": "R103",
+    "file": "scripts/recorder/cli.ts",
+    "description": "env: custom headers allowed",
+    "find": "  \"OPENAI_CUSTOM_HEADERS\",\n",
+    "replace": ""
+  },
+  {
+    "id": "R104",
+    "file": "scripts/recorder/cli.ts",
+    "description": "env: anthropic auth token allowed",
+    "find": "  \"ANTHROPIC_AUTH_TOKEN\",\n",
+    "replace": ""
+  },
+  {
+    "id": "R105",
+    "file": "scripts/recorder/cli.ts",
+    "description": "env: telemetry prefix allowed",
+    "find": "const UNSAFE_PREFIXES: readonly string[] = [\"ANTHROPIC_OPEN_TELEMETRY\"];",
+    "replace": "const UNSAFE_PREFIXES: readonly string[] = [];"
+  },
+  {
+    "id": "R106",
+    "file": "scripts/recorder/cli.ts",
+    "description": "env: http URLs accepted",
+    "find": "      ok = new URL(value).protocol === \"https:\";",
+    "replace": "      ok = new URL(value).protocol !== \"\";"
+  },
+  {
+    "id": "R107",
+    "file": "scripts/recorder/cli.ts",
+    "description": "env: organization not pinned off",
+    "find": "return { apiKey, maxRetries: 0, baseURL, organization: null, project: null };",
+    "replace": "return { apiKey, maxRetries: 0, baseURL };"
+  },
+  {
+    "id": "R108",
+    "file": "scripts/recorder/cli.ts",
+    "description": "env: anthropic auth token not pinned off",
+    "find": "return { apiKey, maxRetries: 0, baseURL: OFFICIAL_BASE_URL.anthropic, authToken: null };",
+    "replace": "return { apiKey, maxRetries: 0, baseURL: OFFICIAL_BASE_URL.anthropic };"
   }
 ]

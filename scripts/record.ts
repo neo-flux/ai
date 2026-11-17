@@ -7,7 +7,15 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { serializeFixture } from "../src/testing/fixture.ts";
 import { INVALID_KEY } from "./recorder/cases.ts";
-import { formatPlan, listQwenModels, missingEnv, parseRecordArgs, plan } from "./recorder/cli.ts";
+import {
+  clientOptions,
+  formatPlan,
+  listQwenModels,
+  missingEnv,
+  parseRecordArgs,
+  plan,
+  unsafeEnv,
+} from "./recorder/cli.ts";
 import { checkModels, configuredModels, MODELS, type Provider } from "./recorder/models.ts";
 import { type Connect, recordCase } from "./recorder/record.ts";
 
@@ -25,21 +33,18 @@ const KEY: Record<Provider, string> = {
   deepseek: "DEEPSEEK_API_KEY",
   qwen: "DASHSCOPE_API_KEY",
 };
-const BASE_URL: Partial<Record<Provider, string>> = {
-  deepseek: "NEOFLUX_AI_DEEPSEEK_BASE_URL",
-  qwen: "NEOFLUX_AI_QWEN_BASE_URL",
-};
-
-function openai(provider: Provider, apiKey: string): OpenAI {
-  const base = BASE_URL[provider];
-  return new OpenAI({ apiKey, maxRetries: 0, ...(base && { baseURL: env[base] }) });
-}
+const openai = (provider: Provider, apiKey: string): OpenAI =>
+  new OpenAI(clientOptions(provider, apiKey, env) as ConstructorParameters<typeof OpenAI>[0]);
+const anthropic = (apiKey: string): Anthropic =>
+  new Anthropic(
+    clientOptions("anthropic", apiKey, env) as ConstructorParameters<typeof Anthropic>[0],
+  );
 
 function connectFor(provider: Provider): Connect {
   return ({ invalidKey }) => {
     const apiKey = invalidKey ? INVALID_KEY : (env[KEY[provider]] as string);
     if (provider === "anthropic") {
-      const client = new Anthropic({ apiKey, maxRetries: 0 });
+      const client = anthropic(apiKey);
       return {
         create: (_api, params, options) =>
           client.messages.create(params as Anthropic.MessageCreateParamsStreaming, options),
@@ -66,7 +71,7 @@ async function* modelIds(provider: Provider): AsyncGenerator<string> {
   if (provider === "qwen") {
     yield* listQwenModels(env.NEOFLUX_AI_QWEN_MODELS_URL as string, apiKey);
   } else if (provider === "anthropic") {
-    for await (const m of new Anthropic({ apiKey, maxRetries: 0 }).models.list()) yield m.id;
+    for await (const m of anthropic(apiKey).models.list()) yield m.id;
   } else {
     for await (const m of openai(provider, apiKey).models.list()) yield m.id;
   }
@@ -88,6 +93,11 @@ async function main(): Promise<number> {
   const missing = missingEnv(args.providers, env);
   if (missing.length > 0) {
     console.error(`missing environment variables: ${missing.join(", ")}`);
+    return 2;
+  }
+  const unsafe = unsafeEnv(args.providers, env);
+  if (unsafe.length > 0) {
+    console.error(unsafe.join("\n"));
     return 2;
   }
 

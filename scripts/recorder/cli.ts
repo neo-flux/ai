@@ -170,3 +170,67 @@ export function scrubAll(fixtures: string): ScrubResult {
   }
   return result;
 }
+
+// Environment variables the SDKs read on their own. Each one can send a request somewhere else,
+// add headers (including an Authorization header that would override the fake key in error-auth),
+// or attach account identifiers. Recording refuses to start while any is set.
+export const UNSAFE_ENV: readonly string[] = [
+  "OPENAI_BASE_URL",
+  "OPENAI_CUSTOM_HEADERS",
+  "OPENAI_ORG_ID",
+  "OPENAI_PROJECT_ID",
+  "ANTHROPIC_BASE_URL",
+  "ANTHROPIC_CUSTOM_HEADERS",
+  "ANTHROPIC_AUTH_TOKEN",
+];
+const UNSAFE_PREFIXES: readonly string[] = ["ANTHROPIC_OPEN_TELEMETRY"];
+const URL_VARS: Partial<Record<Provider, readonly string[]>> = {
+  deepseek: ["NEOFLUX_AI_DEEPSEEK_BASE_URL"],
+  qwen: ["NEOFLUX_AI_QWEN_BASE_URL", "NEOFLUX_AI_QWEN_MODELS_URL"],
+};
+
+export function unsafeEnv(
+  providers: readonly Provider[],
+  env: Readonly<Record<string, string | undefined>>,
+): string[] {
+  const problems: string[] = [];
+  for (const [name, value] of Object.entries(env)) {
+    if (value === undefined || value === "") continue;
+    if (UNSAFE_ENV.includes(name) || UNSAFE_PREFIXES.some((p) => name.startsWith(p))) {
+      problems.push(`${name} is set; unset it before recording`);
+    }
+  }
+  for (const name of providers.flatMap((p) => URL_VARS[p] ?? [])) {
+    const value = env[name];
+    if (value === undefined || value === "") continue;
+    let ok = false;
+    try {
+      ok = new URL(value).protocol === "https:";
+    } catch {
+      ok = false;
+    }
+    if (!ok) problems.push(`${name} must be an https URL`);
+  }
+  return problems;
+}
+
+const OFFICIAL_BASE_URL = {
+  openai: "https://api.openai.com/v1",
+  anthropic: "https://api.anthropic.com",
+};
+
+/** Client options with every ambient source pinned or off, so only the given key is ever sent. */
+export function clientOptions(
+  provider: Provider,
+  apiKey: string,
+  env: Readonly<Record<string, string | undefined>>,
+): Record<string, unknown> {
+  if (provider === "anthropic") {
+    return { apiKey, maxRetries: 0, baseURL: OFFICIAL_BASE_URL.anthropic, authToken: null };
+  }
+  const baseURL =
+    provider === "openai"
+      ? OFFICIAL_BASE_URL.openai
+      : env[provider === "deepseek" ? "NEOFLUX_AI_DEEPSEEK_BASE_URL" : "NEOFLUX_AI_QWEN_BASE_URL"];
+  return { apiKey, maxRetries: 0, baseURL, organization: null, project: null };
+}

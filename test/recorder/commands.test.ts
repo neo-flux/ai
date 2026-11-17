@@ -39,3 +39,14 @@ describe("bun scripts/record.ts", () => {
     expect(r.err).toContain("unknown provider acme");
   });
 });
+
+describe("bun scripts/record.ts environment checks", () => {
+  test("refuses to record with an SDK variable that redirects requests", () => {
+    const r = Bun.spawnSync(["bun", "scripts/record.ts", "--provider", "openai"], {
+      cwd: root,
+      env: { ...env, OPENAI_API_KEY: "k", OPENAI_BASE_URL: "https://proxy.example" },
+    });
+    expect(r.exitCode).toBe(2);
+    expect(r.stderr.toString()).toContain("OPENAI_BASE_URL is set; unset it before recording");
+  });
+});
