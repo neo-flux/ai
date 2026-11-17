@@ -3,6 +3,7 @@
 import { copyFileSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { stripsTypesByDefault } from "./node-version.ts";
 import { buildAndPack, root, run } from "./pack.ts";
 
 const work = mkdtempSync(join(tmpdir(), "neoflux-ai-smoke-"));
@@ -43,11 +44,11 @@ try {
     }
   }
 
-  // Type stripping is on by default from Node 24 (the CI matrix runs 22 and 24).
+  // Runs src/ directly on any Node that strips types by default, including the Node 22 CI leg.
   const node = Bun.which("node");
   if (node !== null) {
-    const major = Number(run([node, "-p", "process.versions.node.split('.')[0]"]).trim());
-    if (major >= 24) {
+    const version = run([node, "-p", "process.versions.node"]).trim();
+    if (stripsTypesByDefault(version)) {
       const result = Bun.spawnSync([node, "test/smoke/strip.mjs"], {
         cwd: root,
         stdout: "inherit",
@@ -58,7 +59,7 @@ try {
         ok = false;
       }
     } else {
-      console.log(`skip: src type-stripping run needs Node 24+, found ${major}`);
+      console.log(`skip: Node ${version} doesn't strip types by default (needs 22.18+)`);
     }
   }
 } catch (error) {

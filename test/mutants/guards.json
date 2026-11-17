@@ -376,5 +376,26 @@
     "description": "d.ts graph: source .mts specifiers not mapped to .d.mts",
     "find": "  if (target.endsWith(\".mts\")) return `${target.slice(0, -4)}.d.mts`;\n",
     "replace": ""
+  },
+  {
+    "id": "M55",
+    "file": "scripts/node-version.ts",
+    "description": "node version: 22.17 treated as stripping",
+    "find": "if (major === 22) return minor >= 18;",
+    "replace": "if (major === 22) return minor >= 17;"
+  },
+  {
+    "id": "M56",
+    "file": "scripts/node-version.ts",
+    "description": "node version: 23.5 treated as stripping",
+    "find": "if (major === 23) return minor >= 6;",
+    "replace": "if (major === 23) return minor >= 5;"
+  },
+  {
+    "id": "M57",
+    "file": "scripts/node-version.ts",
+    "description": "node version: Node 24 not treated as stripping",
+    "find": "return major > 23;",
+    "replace": "return major > 24;"
   }
 ]
