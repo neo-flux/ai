@@ -1,11 +1,12 @@
 // Copied into a scratch project that has the packed tarball in node_modules, then run unchanged
 // on Node and Deno. Static imports by package name only, so Deno needs no permissions.
 import * as root from "@neoflux/ai";
+import * as compat from "@neoflux/ai/compat";
 import * as testing from "@neoflux/ai/testing";
 import { check } from "./check.mjs";
 import pkg from "./node_modules/@neoflux/ai/package.json" with { type: "json" };
 
-const entries = { ".": root, "./testing": testing };
+const entries = { ".": root, "./compat": compat, "./testing": testing };
 
 const runtime =
   typeof globalThis.Deno === "undefined"
