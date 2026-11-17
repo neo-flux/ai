@@ -1,9 +1,9 @@
-// Runs unchanged on Node and Deno. Static imports only, so Deno needs no permissions.
+// Copied into a scratch project that has the packed tarball in node_modules, then run unchanged
+// on Node and Deno. Static imports by package name only, so Deno needs no permissions.
+import * as root from "@neoflux/ai";
+import pkg from "./node_modules/@neoflux/ai/package.json" with { type: "json" };
 
-import * as root from "../../dist/index.js";
-import pkg from "../../package.json" with { type: "json" };
-
-const entries = { ".": ["./dist/index.js", root] };
+const entries = { ".": root };
 
 const runtime =
   typeof globalThis.Deno === "undefined"
@@ -18,9 +18,7 @@ const imported = Object.keys(entries).sort();
 if (JSON.stringify(exported) !== JSON.stringify(imported)) {
   fail(`package.json exports ${exported.join(", ")} but smoke imports ${imported.join(", ")}`);
 }
-for (const [subpath, [target, namespace]] of Object.entries(entries)) {
-  if (pkg.exports[subpath].default !== target)
-    fail(`${subpath} points at ${pkg.exports[subpath].default}`);
+for (const [subpath, namespace] of Object.entries(entries)) {
   if (namespace[Symbol.toStringTag] !== "Module") fail(`${subpath} did not load as a module`);
 }
 
