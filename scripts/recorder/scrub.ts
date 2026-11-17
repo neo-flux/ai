@@ -17,16 +17,8 @@ import {
 } from "../guards.ts";
 import { allowlistHeaders } from "./record.ts";
 
-const ID_KEYS = new Set([
-  "id",
-  "call_id",
-  "item_id",
-  "response_id",
-  "previous_response_id",
-  "tool_use_id",
-  "tool_call_id",
-  "system_fingerprint",
-]);
+// Every `*_id` key (call_id, tool_use_id, previous_response_id, ...) is an id too, see value().
+const ID_KEYS = new Set(["id", "system_fingerprint"]);
 const OPAQUE_KEYS = new Set(["encrypted_content", "signature"]);
 // Keys that would change an object's prototype if anything assigned them.
 const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);

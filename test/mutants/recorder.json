@@ -406,13 +406,6 @@
     "replace": "    let placeholder: string | undefined;"
   },
   {
-    "id": "R59",
-    "file": "scripts/recorder/scrub.ts",
-    "description": "scrub: call_id not scrubbed",
-    "find": "  \"call_id\",\n",
-    "replace": ""
-  },
-  {
     "id": "R60",
     "file": "scripts/recorder/scrub.ts",
     "description": "scrub: encrypted_content not scrubbed",
