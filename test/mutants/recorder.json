@@ -691,5 +691,26 @@
     "description": "replay: rebuilt error drops recorded fields",
     "find": "  const error = Object.assign(new Error(message ?? \"\"), fields, {",
     "replace": "  const error = Object.assign(new Error(message ?? \"\"), {"
+  },
+  {
+    "id": "R100",
+    "file": "src/testing/fixture.ts",
+    "description": "chunk after an error accepted",
+    "find": "      if (open.error !== undefined) throw new TypeError(`${at}: chunk after the error`);\n",
+    "replace": ""
+  },
+  {
+    "id": "R101",
+    "file": "src/testing/fixture.ts",
+    "description": "second error line accepted",
+    "find": "      if (open.error !== undefined)\n        throw new TypeError(`${at}: second error for call ${open.index}`);\n",
+    "replace": ""
+  },
+  {
+    "id": "R102",
+    "file": "scripts/recorder/record.ts",
+    "description": "outcome taken from the plan, not the signal",
+    "find": "    if (controller.signal.aborted) call.outcome = \"returned-after-abort\";",
+    "replace": "    if (planned.abortAfterChunks !== undefined) call.outcome = \"returned-after-abort\";"
   }
 ]

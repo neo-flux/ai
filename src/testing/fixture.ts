@@ -122,6 +122,8 @@ export function parseFixture(text: string): Fixture {
       if (open.error !== undefined) throw new TypeError(`${at}: chunk after the error`);
       open.chunks.push(value.data);
     } else if (value.kind === "error") {
+      if (open.error !== undefined)
+        throw new TypeError(`${at}: second error for call ${open.index}`);
       if (value.phase !== "create" && value.phase !== "stream") {
         throw new TypeError(`${at}: phase must be create or stream`);
       }

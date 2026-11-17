@@ -99,6 +99,11 @@ describe("parseFixture", () => {
     );
     rejects(lines(meta, call(0), end(0, "completed"), chunk(0, {})), /after its end/);
     rejects(lines(meta, call(0), end(0, "completed"), meta), /line 4/);
+    rejects(
+      lines(meta, call(0), error(0, 0), chunk(0, {}), end(0, "threw")),
+      /chunk after the error/,
+    );
+    rejects(lines(meta, call(0), error(0, 0), error(0, 0), end(0, "threw")), /second error/);
   });
 });
 

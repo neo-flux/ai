@@ -142,6 +142,16 @@ describe("recordCase", () => {
     expect(f.calls[0]?.outcome).toBe("returned-after-abort");
   });
 
+  test("a stream that ends before the planned abort is completed, not aborted", async () => {
+    const { connect, seen } = connection(stream([1, 2]));
+    const f = await recordCase(
+      single(() => ({ params: {}, abortAfterChunks: 5 })),
+      ctx(connect),
+    );
+    expect(seen[0]?.options.signal.aborted).toBe(false);
+    expect(f.calls[0]?.outcome).toBe("completed");
+  });
+
   test("an SDK that throws on abort is recorded as threw", async () => {
     const throwing: Script = async (_p, options) => ({
       async *[Symbol.asyncIterator]() {
