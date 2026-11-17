@@ -103,5 +103,89 @@
     "description": "recorded status null kept as null",
     "find": "    status: status ?? undefined,",
     "replace": "    status,"
+  },
+  {
+    "id": "R16",
+    "file": "scripts/recorder/record.ts",
+    "description": "chunks stored by reference",
+    "find": "      call.chunks.push(clone(item));",
+    "replace": "      call.chunks.push(item);"
+  },
+  {
+    "id": "R17",
+    "file": "scripts/recorder/record.ts",
+    "description": "mid-stream error recorded at afterChunks 0",
+    "find": "error = { phase, afterChunks: call.chunks.length,",
+    "replace": "error = { phase, afterChunks: 0,"
+  },
+  {
+    "id": "R18",
+    "file": "scripts/recorder/record.ts",
+    "description": "abort-return recorded as completed",
+    "find": "    if (controller.signal.aborted) call.outcome = \"returned-after-abort\";\n",
+    "replace": ""
+  },
+  {
+    "id": "R19",
+    "file": "scripts/recorder/record.ts",
+    "description": "header allowlist bypassed",
+    "find": "    if (ALLOWED_HEADERS.includes(name) && typeof value === \"string\") out[name] = value;",
+    "replace": "    if (typeof value === \"string\") out[name] = value;"
+  },
+  {
+    "id": "R20",
+    "file": "scripts/recorder/record.ts",
+    "description": "rate-limit headers allowed",
+    "find": "export const ALLOWED_HEADERS: readonly string[] = [\"content-type\", \"retry-after\", \"retry-after-ms\"];",
+    "replace": "export const ALLOWED_HEADERS: readonly string[] = [\"content-type\", \"retry-after\", \"retry-after-ms\", \"x-ratelimit-limit-requests\"];"
+  },
+  {
+    "id": "R21",
+    "file": "scripts/recorder/record.ts",
+    "description": "requestID kept",
+    "find": "const OPTIONAL_FIELDS = [\"code\", \"type\", \"param\", \"errorCode\", \"details\", \"apiMessage\"] as const;",
+    "replace": "const OPTIONAL_FIELDS = [\"code\", \"type\", \"param\", \"errorCode\", \"details\", \"apiMessage\", \"requestID\", \"workspaceID\"] as const;"
+  },
+  {
+    "id": "R22",
+    "file": "scripts/recorder/record.ts",
+    "description": "abort after N+1",
+    "find": "      if (call.chunks.length === planned.abortAfterChunks) controller.abort();",
+    "replace": "      if (call.chunks.length === (planned.abortAfterChunks ?? -2) + 1) controller.abort();"
+  },
+  {
+    "id": "R23",
+    "file": "scripts/recorder/record.ts",
+    "description": "retries allowed",
+    "find": "const options: RequestOptions = { signal: controller.signal, maxRetries: 0 };",
+    "replace": "const options = { signal: controller.signal } as RequestOptions;"
+  },
+  {
+    "id": "R24",
+    "file": "scripts/recorder/record.ts",
+    "description": "phase not advanced after create",
+    "find": "    phase = \"stream\";\n",
+    "replace": ""
+  },
+  {
+    "id": "R25",
+    "file": "scripts/recorder/record.ts",
+    "description": "recording continues after a failed turn",
+    "find": "    if (call.outcome === \"threw\") break;\n",
+    "replace": ""
+  },
+  {
+    "id": "R26",
+    "file": "scripts/recorder/record.ts",
+    "description": "invalid key always off",
+    "find": "connect({ invalidKey: planned.invalidKey === true })",
+    "replace": "connect({ invalidKey: false })"
+  },
+  {
+    "id": "R27",
+    "file": "scripts/recorder/record.ts",
+    "description": "header names not lowercased",
+    "find": "    const name = key.toLowerCase();",
+    "replace": "    const name = key;"
   }
 ]
