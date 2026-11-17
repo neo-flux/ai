@@ -10,6 +10,7 @@ permissions:
 jobs:
   test:
     runs-on: docker # TODO: confirm runner label
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
