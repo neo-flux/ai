@@ -137,6 +137,15 @@ describe("repository", () => {
     }
   });
 
+  test("no commit message or branch name names a banned term", () => {
+    const messages = git("log", "-z", "--format=%B");
+    const branches = git("for-each-ref", "--format=%(refname:short)%00", "refs/heads", "refs/tags");
+    expect(messages.length).toBeGreaterThan(0);
+    for (const text of [...messages, ...branches]) {
+      expect({ text, found: findBannedTerms(text, BANNED_TERMS) }).toEqual({ text, found: [] });
+    }
+  });
+
   test("Forgejo and GitHub test workflows match", () => {
     const github = readFileSync(join(root, ".github/workflows/test.yml"), "utf8");
     const forgejo = readFileSync(join(root, ".forgejo/workflows/test.yml"), "utf8");
