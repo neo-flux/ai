@@ -82,15 +82,12 @@ function checkRequest(request: unknown): asserts request is ModelRequest {
   validateMessages((request as ModelRequest).messages);
 }
 
-interface Step {
-  promise: Promise<IteratorResult<StreamEvent>>;
-  settled: boolean;
-}
-
 // Races the adapter against the signal, so an adapter that ignores aborts can't hang the call.
-function nextOrAbort(iterator: AsyncIterator<StreamEvent>, signal: AbortSignal): Step {
-  const step: Step = { promise: Promise.resolve({ done: true, value: undefined }), settled: false };
-  step.promise = new Promise((resolve, reject) => {
+function nextOrAbort(
+  iterator: AsyncIterator<StreamEvent>,
+  signal: AbortSignal,
+): Promise<IteratorResult<StreamEvent>> {
+  return new Promise((resolve, reject) => {
     if (signal.aborted) {
       reject(signal.reason);
       return;
@@ -99,18 +96,15 @@ function nextOrAbort(iterator: AsyncIterator<StreamEvent>, signal: AbortSignal):
     signal.addEventListener("abort", onAbort, { once: true });
     iterator.next().then(
       (result) => {
-        step.settled = true;
         signal.removeEventListener("abort", onAbort);
         resolve(result);
       },
       (error: unknown) => {
-        step.settled = true;
         signal.removeEventListener("abort", onAbort);
         reject(error);
       },
     );
   });
-  return step;
 }
 
 // Resolves when the signal aborts. The listener is removed by `done`.
@@ -128,16 +122,11 @@ function aborted(signal: AbortSignal): { promise: Promise<void>; done: () => voi
   return { promise, done };
 }
 
-async function close(
-  iterator: AsyncIterator<StreamEvent>,
-  wait: boolean,
-  signal: AbortSignal,
-): Promise<void> {
+async function close(iterator: AsyncIterator<StreamEvent>, signal: AbortSignal): Promise<void> {
   try {
     const closing = Promise.resolve(iterator.return?.());
     closing.catch(() => {});
-    if (!wait) return;
-    // Even a settled adapter can hang in its own cleanup; an abort still ends the call.
+    // An adapter stuck mid-next or in its own cleanup can't hold the call past an abort.
     const abort = aborted(signal);
     try {
       await Promise.race([closing, abort.promise]);
@@ -232,13 +221,11 @@ export async function* execute(
     let failure: AIError | undefined;
     let held: StreamEvent | undefined;
     let iterator: AsyncIterator<StreamEvent> | undefined;
-    let step: Step | undefined;
     let exhausted = false;
     try {
       iterator = modelRef.adapter.stream(request, { signal, modelRef })[Symbol.asyncIterator]();
       while (true) {
-        step = nextOrAbort(iterator, signal);
-        const result = await step.promise;
+        const result = await nextOrAbort(iterator, signal);
         if (result.done === true) {
           exhausted = true;
           break;
@@ -264,9 +251,7 @@ export async function* execute(
           ? new AIError({ code: "unknown", provider, cause: error })
           : toAIError(error, { provider, classify: modelRef.adapter.classifyError, signal });
     } finally {
-      // Wait for cleanup unless the adapter is stuck in a call that ignored the abort.
-      if (!exhausted && iterator !== undefined)
-        await close(iterator, step?.settled !== false, signal);
+      if (!exhausted && iterator !== undefined) await close(iterator, signal);
     }
 
     const folded = fold.result();

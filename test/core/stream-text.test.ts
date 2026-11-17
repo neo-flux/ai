@@ -5,7 +5,7 @@ import { AIError, type AIErrorCode, isAIError } from "../../src/errors.ts";
 import type { StreamEvent } from "../../src/events.ts";
 import type { AttemptContext, ErrorContext, UsageInfo } from "../../src/hooks.ts";
 import type { Message } from "../../src/messages.ts";
-import { streamText } from "../../src/stream-text.ts";
+import { Stream, streamText } from "../../src/stream-text.ts";
 import { fakeAdapter } from "../../src/testing/fake-adapter.ts";
 
 const messages: Message[] = [{ role: "user", content: "hi" }];
@@ -846,9 +846,24 @@ describe("streamText: security review follow-ups", () => {
         ],
       },
     ]);
-    await expect(streamText({ model: fake("m"), messages }).result).rejects.toMatchObject({
-      code: "unknown",
-    });
+    const s = streamText({ model: fake("m"), messages });
+    const events = await collect(s);
+    expect(events.map((e) => e.type)).toEqual(["usage", "error"]);
+    expect((events[1] as { error: AIError }).error.code).toBe("unknown");
+    await expect(s.result).rejects.toMatchObject({ code: "unknown" });
+  });
+
+  test("a non-buffering stream (generate's) keeps no events", async () => {
+    const stream = new Stream(
+      { model: fakeAdapter([ok("x")])("m"), messages },
+      {
+        kind: "initial",
+        attemptStart: 0,
+      },
+      false,
+    );
+    await stream.outcome;
+    expect(await collect(stream)).toEqual([]);
   });
 
   test("consumed events are released", async () => {
