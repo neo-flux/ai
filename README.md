@@ -21,6 +21,8 @@ const { output } = await generate({
 
 If the answer isn't valid JSON matching the schema, the library asks the same model once to fix it. If that fails too, `generate` throws an `AIError` with code `output_validation`. The model's last raw text is on `error.rawText`, and it is never part of the error's message.
 
+The repair request sends the model's previous answer and the validator's messages back to the same model, never to another one. The list of problems is capped and quoted.
+
 Structured output is available on `generate` only, not `streamText`. A repair attempt is a second request, and streaming it would show you two answers one after the other.
 
 ## License
