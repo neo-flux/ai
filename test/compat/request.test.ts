@@ -328,6 +328,12 @@ describe("toChatParams: tools, output and options", () => {
     }
   });
 
+  test("option fields mapped to undefined are not written", () => {
+    const out = params({ messages: [user("q")] }, {}, { body: { a: undefined, b: 1 } });
+    expect("a" in out).toBe(false);
+    expect(out.b).toBe(1);
+  });
+
   test("provider options that aren't objects are rejected", () => {
     invalid(() => params({ messages: [user("q")], providerOptions: { acme: "fast" } }));
     invalid(() => params({ messages: [user("q")] }, {}, { body: "x" }));

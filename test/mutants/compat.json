@@ -1,0 +1,520 @@
+[
+  {
+    "id": "X1",
+    "file": "src/compat/request.ts",
+    "description": "reserved-key check skipped",
+    "find": "    if (RESERVED_KEYS.includes(key)) throw invalid(provider, `options may not set \"${key}\"`);\n",
+    "replace": ""
+  },
+  {
+    "id": "X2",
+    "file": "src/compat/request.ts",
+    "description": "call options don't override model options",
+    "find": "  const merged: Json = { ...fromModel, ...fromCall };",
+    "replace": "  const merged: Json = { ...fromCall, ...fromModel };"
+  },
+  {
+    "id": "X3",
+    "file": "src/compat/request.ts",
+    "description": "body merged without call body",
+    "find": "    merged.body = { ...(fromModel.body as Json), ...(fromCall.body as Json) };",
+    "replace": "    merged.body = { ...(fromModel.body as Json) };"
+  },
+  {
+    "id": "X4",
+    "file": "src/compat/request.ts",
+    "description": "undefined option values written",
+    "find": "    if (key === \"__proto__\" || value === undefined) continue;",
+    "replace": "    if (key === \"__proto__\") continue;"
+  },
+  {
+    "id": "X5",
+    "file": "src/compat/request.ts",
+    "description": "non-object provider options accepted",
+    "find": "  if (!isRecord(value)) throw invalid(provider, `${where} must be an object`);\n",
+    "replace": ""
+  },
+  {
+    "id": "X6",
+    "file": "src/compat/request.ts",
+    "description": "assistant content \"\" instead of null with tool calls",
+    "find": "    content: text !== \"\" ? text : toolCalls.length > 0 ? null : \"\",",
+    "replace": "    content: text !== \"\" ? text : \"\","
+  },
+  {
+    "id": "X7",
+    "file": "src/compat/request.ts",
+    "description": "assistant content null without tool calls",
+    "find": "    content: text !== \"\" ? text : toolCalls.length > 0 ? null : \"\",",
+    "replace": "    content: text !== \"\" ? text : null,"
+  },
+  {
+    "id": "X8",
+    "file": "src/compat/request.ts",
+    "description": "tool arguments not stringified",
+    "find": "typeof part.input === \"string\" ? part.input : JSON.stringify(part.input)",
+    "replace": "part.input as string"
+  },
+  {
+    "id": "X9",
+    "file": "src/compat/request.ts",
+    "description": "string input stringified again",
+    "find": "typeof part.input === \"string\" ? part.input : JSON.stringify(part.input)",
+    "replace": "JSON.stringify(part.input)"
+  },
+  {
+    "id": "X10",
+    "file": "src/compat/request.ts",
+    "description": "$schema not stripped",
+    "find": "  const { $schema: _, ...rest } = schema;\n  return rest;",
+    "replace": "  return schema;"
+  },
+  {
+    "id": "X11",
+    "file": "src/compat/request.ts",
+    "description": "tool description dropped",
+    "find": "      if (tool.description !== undefined) fn.description = tool.description;\n",
+    "replace": ""
+  },
+  {
+    "id": "X12",
+    "file": "src/compat/request.ts",
+    "description": "toolChoice name sent as a bare string",
+    "find": "    : { type: \"function\", function: { name: choice.name } };",
+    "replace": "    : choice.name;"
+  },
+  {
+    "id": "X13",
+    "file": "src/compat/request.ts",
+    "description": "tool message id dropped",
+    "find": "{ role: \"tool\", tool_call_id: m.toolCallId, content: m.content }",
+    "replace": "{ role: \"tool\", content: m.content }"
+  },
+  {
+    "id": "X14",
+    "file": "src/compat/request.ts",
+    "description": "reasoning echo ignores the provider key",
+    "find": "      if (part.providerMetadata?.[provider] !== undefined) reasoning.push(part.text);",
+    "replace": "      reasoning.push(part.text);"
+  },
+  {
+    "id": "X15",
+    "file": "src/compat/request.ts",
+    "description": "reasoning echo writes \"\" when there are no parts",
+    "find": "quirks.reasoningField !== undefined && reasoning.length > 0) {",
+    "replace": "quirks.reasoningField !== undefined) {"
+  },
+  {
+    "id": "X16",
+    "file": "src/compat/request.ts",
+    "description": "echoReasoning off still echoes",
+    "find": "  if (quirks.echoReasoning && quirks.reasoningField",
+    "replace": "  if (quirks.reasoningField"
+  },
+  {
+    "id": "X17",
+    "file": "src/compat/request.ts",
+    "description": "reasoning parts joined out of order",
+    "find": "    out[quirks.reasoningField] = reasoning.join(\"\");",
+    "replace": "    out[quirks.reasoningField] = reasoning.reverse().join(\"\");"
+  },
+  {
+    "id": "X18",
+    "file": "src/compat/request.ts",
+    "description": "json_object instruction not added",
+    "find": "      messages.splice(at === -1 ? messages.length : at, 0, {",
+    "replace": "      [].splice(0, 0, {"
+  },
+  {
+    "id": "X19",
+    "file": "src/compat/request.ts",
+    "description": "json_object instruction placed first",
+    "find": "      messages.splice(at === -1 ? messages.length : at, 0, {",
+    "replace": "      messages.splice(0, 0, {"
+  },
+  {
+    "id": "X20",
+    "file": "src/compat/request.ts",
+    "description": "json_schema strict ignored",
+    "find": "      if (mode.strict !== undefined) jsonSchema.strict = mode.strict;\n",
+    "replace": ""
+  },
+  {
+    "id": "X21",
+    "file": "src/compat/request.ts",
+    "description": "maxTokensField ignored",
+    "find": "    params[quirks.maxTokensField] = request.maxOutputTokens;",
+    "replace": "    params.max_tokens = request.maxOutputTokens;"
+  },
+  {
+    "id": "X22",
+    "file": "src/compat/request.ts",
+    "description": "stream_options always sent",
+    "find": "  if (quirks.streamUsage) params.stream_options",
+    "replace": "  params.stream_options"
+  },
+  {
+    "id": "X23",
+    "file": "src/compat/request.ts",
+    "description": "temperature dropped",
+    "find": "  if (request.temperature !== undefined) params.temperature = request.temperature;\n",
+    "replace": ""
+  },
+  {
+    "id": "X24",
+    "file": "src/compat/request.ts",
+    "description": "image bytes without mediaType accepted",
+    "find": "      if (part.mediaType === undefined || part.mediaType === \"\") {",
+    "replace": "      if (false) {"
+  },
+  {
+    "id": "X25",
+    "file": "src/compat/request.ts",
+    "description": "file part passed through",
+    "find": "    case \"file\":\n      throw invalid(provider, \"file parts are not supported by this adapter\");",
+    "replace": "    case \"file\":\n      return { type: \"file\" };"
+  },
+  {
+    "id": "X26",
+    "file": "src/compat/request.ts",
+    "description": "base64 chunks overlap",
+    "find": "String.fromCharCode(...bytes.subarray(i, i + 0x8000))",
+    "replace": "String.fromCharCode(...bytes.subarray(i, i + 0x8001))"
+  },
+  {
+    "id": "X27",
+    "file": "src/compat/stream.ts",
+    "description": "empty content emits a delta",
+    "find": "const text = (value: unknown): string | undefined =>\n  typeof value === \"string\" && value !== \"\" ? value : undefined;",
+    "replace": "const text = (value: unknown): string | undefined =>\n  typeof value === \"string\" ? value : undefined;"
+  },
+  {
+    "id": "X28",
+    "file": "src/compat/stream.ts",
+    "description": "reasoning-end not emitted on switch to text",
+    "find": "      if (t === undefined) continue;\n      this.#closeReasoning(out);",
+    "replace": "      if (t === undefined) continue;"
+  },
+  {
+    "id": "X29",
+    "file": "src/compat/stream.ts",
+    "description": "reasoning-end not emitted on switch to a tool call",
+    "find": "  #start(call: ToolCall, out: StreamEvent[]): void {\n    this.#closeReasoning(out);",
+    "replace": "  #start(call: ToolCall, out: StreamEvent[]): void {"
+  },
+  {
+    "id": "X30",
+    "file": "src/compat/stream.ts",
+    "description": "open reasoning not closed at the end",
+    "find": "    const events: StreamEvent[] = [];\n    this.#closeReasoning(events);",
+    "replace": "    const events: StreamEvent[] = [];"
+  },
+  {
+    "id": "X31",
+    "file": "src/compat/stream.ts",
+    "description": "reasoning-end without metadata",
+    "find": "      providerMetadata: { [this.#provider]: { reasoningField: field } },\n",
+    "replace": ""
+  },
+  {
+    "id": "X32",
+    "file": "src/compat/stream.ts",
+    "description": "refusal ignored",
+    "find": "    for (const value of [delta.content, delta.refusal]) {",
+    "replace": "    for (const value of [delta.content]) {"
+  },
+  {
+    "id": "X33",
+    "file": "src/compat/stream.ts",
+    "description": "usage ignored",
+    "find": "    if (isRecord(chunk.usage)) this.#readUsage(chunk.usage);\n",
+    "replace": ""
+  },
+  {
+    "id": "X34",
+    "file": "src/compat/stream.ts",
+    "description": "usage-only chunk ignored",
+    "find": "    if (isRecord(chunk.usage)) this.#readUsage(chunk.usage);\n    const choices",
+    "replace": "    if (isRecord(chunk.usage) && Array.isArray(chunk.choices) && chunk.choices.length > 0)\n      this.#readUsage(chunk.usage);\n    const choices"
+  },
+  {
+    "id": "X35",
+    "file": "src/compat/stream.ts",
+    "description": "quirk usage overrides the standard value",
+    "find": "      const value = next[key] ?? count(extra[key]);",
+    "replace": "      const value = count(extra[key]) ?? next[key];"
+  },
+  {
+    "id": "X36",
+    "file": "src/compat/stream.ts",
+    "description": "usage quirk ignored",
+    "find": "      const value = next[key] ?? count(extra[key]);",
+    "replace": "      const value = next[key];"
+  },
+  {
+    "id": "X37",
+    "file": "src/compat/stream.ts",
+    "description": "later usage replaces instead of merging",
+    "find": "      ...(this.#usage ?? next),",
+    "replace": "      ...next,"
+  },
+  {
+    "id": "X38",
+    "file": "src/compat/stream.ts",
+    "description": "missing reasoning_tokens becomes 0",
+    "find": "      reasoningTokens: count(completion.reasoning_tokens),",
+    "replace": "      reasoningTokens: count(completion.reasoning_tokens) ?? 0,"
+  },
+  {
+    "id": "X39",
+    "file": "src/compat/stream.ts",
+    "description": "usage emitted after finish",
+    "find": "    const ended = done(undefined);\n    ended.events.push({ type: \"finish\", reason });\n    return ended;",
+    "replace": "    events.push({ type: \"finish\", reason });\n    return done(undefined);"
+  },
+  {
+    "id": "X40",
+    "file": "src/compat/stream.ts",
+    "description": "tool calls keyed by order instead of index",
+    "find": "    const index = typeof tc.index === \"number\" ? tc.index : 0;",
+    "replace": "    const index = this.#calls.size;"
+  },
+  {
+    "id": "X41",
+    "file": "src/compat/stream.ts",
+    "description": "a later id overwrites",
+    "find": "    call.id ??= text(tc.id);",
+    "replace": "    call.id = text(tc.id) ?? call.id;"
+  },
+  {
+    "id": "X42",
+    "file": "src/compat/stream.ts",
+    "description": "a later empty name overwrites",
+    "find": "    call.name ??= text(fn.name);",
+    "replace": "    call.name = typeof fn.name === \"string\" ? fn.name : call.name;"
+  },
+  {
+    "id": "X43",
+    "file": "src/compat/stream.ts",
+    "description": "args before the start dropped",
+    "find": "      if (args !== undefined) call.pending += args;\n      return;",
+    "replace": "      return;"
+  },
+  {
+    "id": "X44",
+    "file": "src/compat/stream.ts",
+    "description": "missing id not filled",
+    "find": "      call.id ??= `call_${index}`;\n",
+    "replace": ""
+  },
+  {
+    "id": "X45",
+    "file": "src/compat/stream.ts",
+    "description": "tool calls not ended before finish",
+    "find": "    for (const [, call] of calls) events.push({ type: \"tool-call-end\", id: call.id as string });\n",
+    "replace": ""
+  },
+  {
+    "id": "X46",
+    "file": "src/compat/stream.ts",
+    "description": "tool_calls maps to stop",
+    "find": "  tool_calls: \"tool-calls\",",
+    "replace": "  tool_calls: \"stop\","
+  },
+  {
+    "id": "X47",
+    "file": "src/compat/stream.ts",
+    "description": "quirk finish map ignored",
+    "find": "    const mapped = this.#quirks.finishReasons[this.#finish] ?? STANDARD[this.#finish] ?? \"other\";",
+    "replace": "    const mapped = STANDARD[this.#finish] ?? \"other\";"
+  },
+  {
+    "id": "X48",
+    "file": "src/compat/stream.ts",
+    "description": "unknown finish reason maps to stop",
+    "find": "STANDARD[this.#finish] ?? \"other\";",
+    "replace": "STANDARD[this.#finish] ?? \"stop\";"
+  },
+  {
+    "id": "X49",
+    "file": "src/compat/stream.ts",
+    "description": "quirk finish error ignored",
+    "find": "    if (typeof mapped !== \"string\") return done(this.#error(this.#finish, mapped.error));",
+    "replace": "    if (typeof mapped !== \"string\") return done(undefined);"
+  },
+  {
+    "id": "X50",
+    "file": "src/compat/stream.ts",
+    "description": "no finish_reason treated as stop",
+    "find": "    if (this.#finish === undefined) return done(this.#error(undefined));",
+    "replace": "    this.#finish ??= \"stop\";"
+  },
+  {
+    "id": "X51",
+    "file": "src/compat/stream.ts",
+    "description": "tool-calls kept without a call (O7)",
+    "find": "    const reason = mapped === \"tool-calls\" && calls.length === 0 ? \"other\" : mapped;",
+    "replace": "    const reason = mapped;"
+  },
+  {
+    "id": "X52",
+    "file": "src/compat/stream.ts",
+    "description": "abort after the loop not thrown",
+    "find": "  if (signal.aborted) throw signal.reason;\n",
+    "replace": ""
+  },
+  {
+    "id": "X53",
+    "file": "src/compat/stream.ts",
+    "description": "first choice not required to be index 0",
+    "find": "(c) => isRecord(c) && (c.index === 0 || c.index === undefined)",
+    "replace": "(c) => isRecord(c)"
+  },
+  {
+    "id": "X54",
+    "file": "src/compat/errors.ts",
+    "description": "quirk classifyError not consulted",
+    "find": "    const custom = quirks.classifyError?.(shape, error);",
+    "replace": "    const custom = undefined;"
+  },
+  {
+    "id": "X55",
+    "file": "src/compat/errors.ts",
+    "description": "timeout constant ignored",
+    "find": "read(error, \"message\") === SDK_TIMEOUT_MESSAGE ? \"timeout\" : \"provider_unavailable\"",
+    "replace": "\"provider_unavailable\""
+  },
+  {
+    "id": "X56",
+    "file": "src/compat/errors.ts",
+    "description": "every connection error is a timeout",
+    "find": "read(error, \"message\") === SDK_TIMEOUT_MESSAGE ? \"timeout\" : \"provider_unavailable\"",
+    "replace": "\"timeout\""
+  },
+  {
+    "id": "X57",
+    "file": "src/compat/errors.ts",
+    "description": "status-less body error left to core",
+    "find": "    return { code: \"provider_unavailable\" };\n  };",
+    "replace": "    return undefined;\n  };"
+  },
+  {
+    "id": "X58",
+    "file": "src/compat/errors.ts",
+    "description": "non-SDK errors classified",
+    "find": "    if (shape.status !== undefined || !sdkShaped(error)) return undefined;",
+    "replace": "    if (shape.status !== undefined) return undefined;"
+  },
+  {
+    "id": "X59",
+    "file": "src/compat/adapter.ts",
+    "description": "signal not passed to create()",
+    "find": "        { signal: ctx.signal },",
+    "replace": "        {},"
+  },
+  {
+    "id": "X60",
+    "file": "src/compat/adapter.ts",
+    "description": "client shape not checked",
+    "find": "  if (typeof create !== \"function\") {",
+    "replace": "  if (false) {"
+  },
+  {
+    "id": "X61",
+    "file": "src/compat/adapter.ts",
+    "description": "provider name not checked",
+    "find": "  if (!PROVIDER_NAME.test(provider)) {",
+    "replace": "  if (false) {"
+  },
+  {
+    "id": "X62",
+    "file": "src/compat/adapter.ts",
+    "description": "classifyError not wired",
+    "find": "    classifyError: classifyCompatError(resolved),",
+    "replace": "    classifyError: undefined,"
+  },
+  {
+    "id": "X63",
+    "file": "src/compat/quirks.ts",
+    "description": "stream usage off by default",
+    "find": "    streamUsage: quirks.streamUsage ?? true,",
+    "replace": "    streamUsage: quirks.streamUsage ?? false,"
+  },
+  {
+    "id": "X64",
+    "file": "src/compat/quirks.ts",
+    "description": "json_object by default",
+    "find": "    structuredOutput: quirks.structuredOutput ?? { mode: \"json_schema\" },",
+    "replace": "    structuredOutput: quirks.structuredOutput ?? { mode: \"json_object\" },"
+  },
+  {
+    "id": "X65",
+    "file": "src/compat/quirks.ts",
+    "description": "n not reserved",
+    "find": "  \"temperature\",\n  \"n\",",
+    "replace": "  \"temperature\","
+  },
+  {
+    "id": "X66",
+    "file": "src/deepseek/index.ts",
+    "description": "prompt_cache_hit_tokens fallback removed",
+    "find": "  usage: (raw) => ({ cachedInputTokens: count(raw.prompt_cache_hit_tokens) }),\n",
+    "replace": ""
+  },
+  {
+    "id": "X67",
+    "file": "src/deepseek/index.ts",
+    "description": "insufficient_system_resource not an error",
+    "find": "    insufficient_system_resource: { error: { code: \"provider_unavailable\" } },",
+    "replace": "    insufficient_system_resource: \"other\","
+  },
+  {
+    "id": "X68",
+    "file": "src/deepseek/index.ts",
+    "description": "aborted finish not an error",
+    "find": "    aborted: { error: { code: \"provider_unavailable\" } },",
+    "replace": "    aborted: \"other\","
+  },
+  {
+    "id": "X69",
+    "file": "src/deepseek/index.ts",
+    "description": "402 not billing",
+    "find": "(shape.status === 402 ? { code: \"billing\" } : undefined)",
+    "replace": "undefined"
+  },
+  {
+    "id": "X70",
+    "file": "src/deepseek/index.ts",
+    "description": "thinking option not mapped to { type }",
+    "find": "fields.thinking = { type: options.thinking };",
+    "replace": "fields.thinking = options.thinking;"
+  },
+  {
+    "id": "X71",
+    "file": "src/deepseek/index.ts",
+    "description": "reasoningEffort not mapped",
+    "find": "    if (options.reasoningEffort !== undefined) fields.reasoning_effort = options.reasoningEffort;\n",
+    "replace": ""
+  },
+  {
+    "id": "X72",
+    "file": "src/deepseek/index.ts",
+    "description": "reasoning echo off",
+    "find": "  echoReasoning: true,",
+    "replace": "  echoReasoning: false,"
+  },
+  {
+    "id": "X73",
+    "file": "src/deepseek/index.ts",
+    "description": "json_schema mode for DeepSeek",
+    "find": "  structuredOutput: { mode: \"json_object\" },",
+    "replace": "  structuredOutput: { mode: \"json_schema\" },"
+  },
+  {
+    "id": "X74",
+    "file": "src/deepseek/index.ts",
+    "description": "body ignored",
+    "find": "    return { ...fields, ...(options.body as Record<string, unknown> | undefined) };",
+    "replace": "    return fields;"
+  }
+]

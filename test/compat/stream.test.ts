@@ -186,6 +186,18 @@ describe("ChunkTranslator: usage", () => {
     expect(usageOf(filled)?.cachedInputTokens).toBe(2);
   });
 
+  test("a later usage chunk without a field keeps the earlier value", () => {
+    const events = run([
+      chunk({ content: "x" }, null, {
+        prompt_tokens: 3,
+        completion_tokens: 1,
+        prompt_tokens_details: { cached_tokens: 2 },
+      }),
+      chunk({}, "stop", { prompt_tokens: 3, completion_tokens: 4 }),
+    ]);
+    expect(usageOf(events)).toMatchObject({ cachedInputTokens: 2, outputTokens: 4 });
+  });
+
   test("no usage, no usage event", () => {
     expect(types(run([chunk({ content: "x" }, "stop")]))).toEqual(["text-delta", "finish"]);
   });
@@ -238,6 +250,23 @@ describe("ChunkTranslator: tool calls", () => {
     expect(events.filter((e) => e.type === "tool-call-start")).toEqual([
       { type: "tool-call-start", id: "a", name: "f" },
     ]);
+  });
+
+  test("a different id or an empty name in a continuation chunk changes nothing", () => {
+    const started = run([
+      call(0, { id: "a", function: { name: "f", arguments: "" } }),
+      call(0, { id: "b", function: { arguments: "{}" } }),
+      chunk({}, "tool_calls"),
+    ]);
+    expect(started.filter((e) => e.type !== "finish").map((e) => (e as { id: string }).id)).toEqual(
+      ["a", "a", "a"],
+    );
+    const late = run([
+      call(1, { function: { name: "f", arguments: "{" } }),
+      call(1, { function: { name: "", arguments: "}" } }),
+      chunk({}, "tool_calls"),
+    ]);
+    expect(late[0]).toEqual({ type: "tool-call-start", id: "call_1", name: "f" });
   });
 
   test("a call that never got an id is named call_<index> at the end", () => {
