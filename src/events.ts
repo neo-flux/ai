@@ -145,7 +145,11 @@ export class EventOrder {
   /** Accepts the next event or throws the rule it breaks. */
   push(event: unknown): void {
     const index = this.#index++;
-    const type = isRecord(event) && typeof event.type === "string" ? event.type : undefined;
+    // Only known types are named in the error; an adapter's arbitrary string is not echoed.
+    const type =
+      isRecord(event) && typeof event.type === "string" && KNOWN_TYPES.includes(event.type)
+        ? event.type
+        : undefined;
     const fail = (rule: OrderRule): EventOrderError => new EventOrderError(rule, index, type);
     if (this.#terminated) throw fail("O1");
     if (!isRecord(event) || !wellFormed(event)) throw fail("O0");

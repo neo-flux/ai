@@ -684,5 +684,12 @@
     "description": "huge retry-after passed through",
     "find": "const safe = (ms: number): number | undefined => (Number.isSafeInteger(ms) ? ms : undefined);",
     "replace": "const safe = (ms: number): number | undefined => ms;"
+  },
+  {
+    "id": "C112",
+    "file": "src/events.ts",
+    "description": "unknown event types echoed in the error",
+    "find": "&& KNOWN_TYPES.includes(event.type)\n",
+    "replace": "\n"
   }
 ]

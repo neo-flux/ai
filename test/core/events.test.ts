@@ -160,6 +160,17 @@ describe("violations", () => {
     violates([{ type: "usage" }], "O8", 0);
   });
 
+  test("an unknown event type string is not echoed in the error", () => {
+    try {
+      assertEventOrder([{ type: "SECRET-TYPE" } as never]);
+    } catch (e) {
+      expect((e as Error).message).toBe("event 0 breaks O0");
+      expect((e as EventOrderError).eventType).toBeUndefined();
+      return;
+    }
+    throw new Error("expected a throw");
+  });
+
   test("the error message names the rule and index but no event content", () => {
     try {
       assertEventOrder([finish, { type: "text-delta", text: "SECRET-CONTENT" }]);
