@@ -60,4 +60,4 @@ Some providers need opaque data from one turn sent back on the next: reasoning s
 
 ## Errors and fallback
 
-An adapter reports failure by throwing from its iterator. Yielding an `error` event is handled the same way. The library classifies the thrown value and decides whether to fall back to the next model. It falls back only when the error is retryable and no event has reached the caller yet. Otherwise it emits the `error` event itself. A fallback chain means the same request may be sent to every provider on it, in order, so list only providers you're willing to send that request to.
+An adapter reports failure by throwing from its iterator. Yielding an `error` event is handled the same way. The library classifies the thrown value and decides whether to fall back to the next model. It falls back only when the error has `failover: true` and no event has reached the caller yet (see `docs/errors.md`). Otherwise it emits the `error` event itself. A fallback chain means the same request may be sent to every provider on it, in order, so list only providers you're willing to send that request to.

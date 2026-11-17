@@ -7,7 +7,8 @@ Every failure the library reports is an `AIError`. `generate` throws it, and `st
 | Field                          | Meaning                                                                      |
 | ------------------------------ | ---------------------------------------------------------------------------- |
 | `code`                         | One of the codes below                                                       |
-| `retryable`                    | Whether trying again (or trying the next model) can help                     |
+| `retryable`                    | Whether the same request to the same model may succeed later                 |
+| `failover`                     | Whether the next model in a fallback chain may be tried                      |
 | `provider`                     | The provider name, when known                                                |
 | `status`                       | The HTTP status, when there was one                                          |
 | `providerCode`, `providerType` | The provider's own error code and type, only when they are short identifiers |
@@ -15,20 +16,31 @@ Every failure the library reports is an `AIError`. `generate` throws it, and `st
 | `rawText`                      | `output_validation` only: the model's last answer                            |
 | `issues`                       | `output_validation` only: what failed validation                             |
 
-| Code                   | Retryable by default | When                                                                        |
-| ---------------------- | -------------------- | --------------------------------------------------------------------------- |
-| `rate_limit`           | yes                  | Too many requests or tokens (HTTP 429)                                      |
-| `timeout`              | yes                  | The request timed out. Not retryable when your own signal timed out.        |
-| `provider_unavailable` | yes                  | The provider failed or is overloaded (HTTP 5xx)                             |
-| `context_length`       | no                   | The request is too long for the model                                       |
-| `auth`                 | no                   | Bad or missing credentials (HTTP 401, 403)                                  |
-| `content_filter`       | no                   | The provider refused the content                                            |
-| `invalid_request`      | no                   | The request is malformed. Many of these are caught before any network call. |
-| `output_validation`    | no                   | Structured output failed after one repair attempt                           |
-| `aborted`              | never                | You aborted the call. Never falls back to another model.                    |
-| `unknown`              | no                   | An adapter bug, or a provider error that couldn't be mapped                 |
+| Code                   | Retryable | Failover | When                                                                        |
+| ---------------------- | --------- | -------- | --------------------------------------------------------------------------- |
+| `rate_limit`           | yes       | yes      | Too many requests or tokens (HTTP 429)                                      |
+| `timeout`              | yes       | yes      | The request timed out. Neither flag is set when your own signal timed out.  |
+| `provider_unavailable` | yes       | yes      | The provider failed, is overloaded, or cut the answer short (HTTP 5xx)      |
+| `auth`                 | no        | yes      | Bad or missing credentials (HTTP 401, 403)                                  |
+| `billing`              | no        | yes      | The account is out of balance or hasn't paid for access                     |
+| `context_length`       | no        | no       | The request is too long for the model                                       |
+| `content_filter`       | no        | no       | The provider refused the content                                            |
+| `invalid_request`      | no        | no       | The request is malformed. Many of these are caught before any network call. |
+| `output_validation`    | no        | no       | Structured output failed after one repair attempt                           |
+| `aborted`              | never     | never    | You aborted the call                                                        |
+| `unknown`              | no        | no       | An adapter bug, or a provider error that couldn't be mapped                 |
+
+These are defaults. An adapter can override `retryable` and `failover` for a specific provider error, except for `aborted`.
 
 Use `isAIError(value)` rather than `instanceof` when your app might load two copies of the package. `instanceof AIError` also works across copies, because both check the same `Symbol.for` brand.
+
+## Fallback
+
+When `model` is a list, the library tries the next model only if the error has `failover: true` and no event has reached you yet. After the first event, a failure is an `error` event and the call ends: it never switches models silently. The structured-output repair always goes to the model that answered, never down the chain.
+
+`retryable` doesn't drive fallback. It's for your own retry logic: a `billing` or `auth` error at one provider says nothing about the next, so it fails over, but sending the same request to the same provider again won't help.
+
+When your own signal aborts or times out, the error has `failover: false`, because the next model can't meet a deadline that has already passed.
 
 ## What an AIError never contains
 
@@ -67,4 +79,4 @@ Read from the `retry-after-ms` header, or from `retry-after` given as seconds or
 
 ## For adapter authors
 
-Adapters report failure by throwing whatever the SDK threw. The library maps it by shape (HTTP status, provider error type and code, retry headers, abort and timeout signals), never with `instanceof`. To map provider-specific cases, give the adapter a `classifyError(shape, error)` that returns `{ code, retryable? }` or `undefined`. If an adapter builds an `AIError` itself, it must pass the SDK error as `providerError`, never as `cause`.
+Adapters report failure by throwing whatever the SDK threw. The library maps it by shape (HTTP status, provider error type and code, retry headers, abort and timeout signals), never with `instanceof`. To map provider-specific cases, give the adapter a `classifyError(shape, error)` that returns `{ code, retryable?, failover? }` or `undefined`. If an adapter builds an `AIError` itself, it must pass the SDK error as `providerError`, never as `cause`.
