@@ -23,155 +23,316 @@
   {
     "id": "M4",
     "file": "scripts/guards.ts",
-    "description": ".d.ts peer allow-list ignored",
-    "find": "if (!allowedPeers.includes(specifier)) violations.push",
-    "replace": "if (false) violations.push"
+    "description": "declare module augmentations not scanned",
+    "find": "  { pattern: /\\bmodule\\s*\"#(\\d+)\"/g, statement: false },\n",
+    "replace": ""
   },
   {
     "id": "M5",
     "file": "scripts/guards.ts",
-    "description": "Bun removed from runtime globals",
-    "find": "  \"Bun\",\n  \"Deno\",",
-    "replace": "  \"Deno\","
+    "description": "type-only lookahead removed (import type from treated as type-only)",
+    "find": "type\\b(?!\\s*(?:,|from\\b))",
+    "replace": "type\\b"
   },
   {
     "id": "M6",
     "file": "scripts/guards.ts",
-    "description": "type-only imports of any package allowed",
+    "description": "type-only imports of any package allowed in src",
     "find": "!(s.typeOnly && typeOnlyPeers.includes(s.specifier))",
     "replace": "!s.typeOnly"
   },
   {
     "id": "M7",
     "file": "scripts/guards.ts",
-    "description": "value imports of peers allowed",
+    "description": "value imports of peers allowed in src",
     "find": "!(s.typeOnly && typeOnlyPeers.includes(s.specifier))",
     "replace": "!typeOnlyPeers.includes(s.specifier)"
   },
   {
     "id": "M8",
     "file": "scripts/guards.ts",
-    "description": "globals: lookbehind removed (matches properties and suffixes)",
-    "find": "`(?<![\\\\w$.])(${names})\\\\b`",
-    "replace": "`(${names})\\\\b`"
-  },
-  {
-    "id": "M9",
-    "file": "scripts/guards.ts",
-    "description": "globals: trailing word boundary removed",
-    "find": "`(?<![\\\\w$.])(${names})\\\\b`",
-    "replace": "`(?<![\\\\w$.])(${names})`"
-  },
-  {
-    "id": "M10",
-    "file": "scripts/guards.ts",
-    "description": "globals: object-key exemption applies everywhere",
-    "find": "if (!objectKey) found.push",
-    "replace": "if (objectKey || true) found.push"
-  },
-  {
-    "id": "M11",
-    "file": "scripts/guards.ts",
-    "description": "globals: globalThis.X not checked",
-    "find": "`\\\\bglobalThis\\\\s*\\\\.\\\\s*(${names})\\\\b`",
-    "replace": "`\\\\bglobalThisNever\\\\s*\\\\.\\\\s*(${names})\\\\b`"
-  },
-  {
-    "id": "M12",
-    "file": "scripts/guards.ts",
     "description": "lexer: template expressions not scanned",
     "find": "out += readCode(true);",
     "replace": "readCode(true);"
   },
   {
-    "id": "M13",
+    "id": "M9",
     "file": "scripts/guards.ts",
     "description": "lexer: regex literals scanned as code",
     "find": "if (source[j] === \"/\") {",
     "replace": "if (false) {"
   },
   {
+    "id": "M10",
+    "file": "scripts/guards.ts",
+    "description": "lexer: no regex after keywords",
+    "find": "return word !== null && KEYWORDS_BEFORE_REGEX.has(word[0]);",
+    "replace": "return false;"
+  },
+  {
+    "id": "M11",
+    "file": "scripts/guards.ts",
+    "description": "lexer: no regex after a closing brace",
+    "find": "\"(,=:[!&|?{};+-*%<>~^\"",
+    "replace": "\"(,=:[!&|?{;+-*%<>~^\""
+  },
+  {
+    "id": "M12",
+    "file": "scripts/guards.ts",
+    "description": "lexer: string escapes not skipped",
+    "find": "        value += source.slice(i, i + 2);\n        i += 2;",
+    "replace": "        value += source[i];\n        i += 1;"
+  },
+  {
+    "id": "M13",
+    "file": "scripts/guards.ts",
+    "description": "lexer: template escapes not skipped",
+    "find": "if (source[i] === \"\\\\\") {\n            i += 2;",
+    "replace": "if (source[i] === \"\\\\\") {\n            i += 1;"
+  },
+  {
     "id": "M14",
+    "file": "scripts/guards.ts",
+    "description": "lexer: block comments join neighbouring tokens",
+    "find": "        out += \" \";\n",
+    "replace": ""
+  },
+  {
+    "id": "M15",
+    "file": "scripts/guards.ts",
+    "description": "lexer: strings run past newlines",
+    "find": "source[i] !== quote && source[i] !== \"\\n\"",
+    "replace": "source[i] !== quote"
+  },
+  {
+    "id": "M16",
+    "file": "scripts/guards.ts",
+    "description": "globals: Bun not banned",
+    "find": "  \"Bun\",\n  \"Deno\",",
+    "replace": "  \"Deno\","
+  },
+  {
+    "id": "M17",
+    "file": "scripts/guards.ts",
+    "description": "globals: globalThis not banned",
+    "find": "  \"global\",\n  \"globalThis\",",
+    "replace": "  \"global\","
+  },
+  {
+    "id": "M18",
+    "file": "scripts/guards.ts",
+    "description": "globals: self not banned",
+    "find": "  \"self\",\n",
+    "replace": ""
+  },
+  {
+    "id": "M19",
+    "file": "scripts/guards.ts",
+    "description": "globals: leading identifier boundary removed",
+    "find": "(?<![\\\\w$])(",
+    "replace": "("
+  },
+  {
+    "id": "M20",
+    "file": "scripts/guards.ts",
+    "description": "globals: trailing identifier boundary removed",
+    "find": ")(?![\\\\w$])",
+    "replace": ")"
+  },
+  {
+    "id": "M21",
+    "file": "scripts/guards.ts",
+    "description": "d.ts graph: .d.ts peer allow-list ignored",
+    "find": "if (!allowedPeers.includes(specifier)) violations.push",
+    "replace": "if (false) violations.push"
+  },
+  {
+    "id": "M22",
     "file": "scripts/guards.ts",
     "description": "d.ts graph: relative edges not followed",
     "find": "queue.push(target);",
     "replace": ""
   },
   {
-    "id": "M15",
+    "id": "M23",
+    "file": "scripts/guards.ts",
+    "description": "d.ts graph: missing entry not reported",
+    "find": "violations.push({ file, specifier: \"(missing)\" });",
+    "replace": ""
+  },
+  {
+    "id": "M24",
+    "file": "scripts/guards.ts",
+    "description": "d.ts graph: .mjs not mapped to .d.mts",
+    "find": "  if (target.endsWith(\".mjs\")) return `${target.slice(0, -4)}.d.mts`;\n",
+    "replace": ""
+  },
+  {
+    "id": "M25",
+    "file": "scripts/guards.ts",
+    "description": "d.ts graph: explicit .d.ts not passed through",
+    "find": "  if (target.endsWith(\".d.ts\")) return target;\n",
+    "replace": ""
+  },
+  {
+    "id": "M26",
     "file": "scripts/guards.ts",
     "description": "manifest: dependencies not checked",
     "find": "    \"dependencies\",\n    \"optionalDependencies\",",
     "replace": "    \"optionalDependencies\","
   },
   {
-    "id": "M16",
+    "id": "M27",
     "file": "scripts/guards.ts",
     "description": "manifest: exact-pin accepts ^ and ~",
     "find": "const EXACT_VERSION = /^\\d",
     "replace": "const EXACT_VERSION = /^[\\^~]?\\d"
   },
   {
-    "id": "M17",
+    "id": "M28",
     "file": "scripts/guards.ts",
     "description": "manifest: postinstall not a lifecycle script",
     "find": "  \"postinstall\",\n  \"preuninstall\",",
     "replace": "  \"preuninstall\","
   },
   {
-    "id": "M18",
+    "id": "M29",
+    "file": "scripts/guards.ts",
+    "description": "manifest: version and dependencies scripts not checked",
+    "find": "  \"preversion\",\n  \"version\",\n  \"postversion\",\n  \"dependencies\",\n",
+    "replace": ""
+  },
+  {
+    "id": "M30",
     "file": "scripts/guards.ts",
     "description": "manifest: peer optional flag not checked",
     "find": "if (record(meta[name]).optional !== true)",
     "replace": "if (false)"
   },
   {
-    "id": "M19",
+    "id": "M31",
     "file": "scripts/guards.ts",
     "description": "manifest: types-first condition not checked",
     "find": "if (Object.keys(entry)[0] !== \"types\")",
     "replace": "if (false)"
   },
   {
-    "id": "M20",
+    "id": "M32",
+    "file": "scripts/guards.ts",
+    "description": "manifest: missing types not reported",
+    "find": "if (entry.types === undefined) v.push(`${at}: missing types`);",
+    "replace": "if (entry.types === undefined) {\n      }"
+  },
+  {
+    "id": "M33",
+    "file": "scripts/guards.ts",
+    "description": "manifest: extra export conditions accepted",
+    "find": "if (condition !== \"types\" && condition !== \"default\") {",
+    "replace": "if (false) {"
+  },
+  {
+    "id": "M34",
     "file": "scripts/guards.ts",
     "description": "manifest: non-empty trustedDependencies accepted",
     "find": " || trusted.length > 0",
     "replace": ""
   },
   {
-    "id": "M21",
+    "id": "M35",
     "file": "scripts/guards.ts",
     "description": "banned terms: case-sensitive",
     "find": "const lower = text.toLowerCase();",
     "replace": "const lower = text;"
   },
   {
-    "id": "M22",
+    "id": "M36",
     "file": "test/repo.test.ts",
     "description": "banned terms: exemption broadened to all tests",
     "find": "const files = all.filter((f) => f !== BANNED_TERMS_FILE);",
     "replace": "const files = all.filter((f) => !f.startsWith(\"test/\"));"
   },
   {
-    "id": "M23",
+    "id": "M37",
     "file": "scripts/guards.ts",
     "description": "workflows: only first line compared",
     "find": "    .filter((line) => !/^\\s*runs-on:/.test(line))",
     "replace": "    .slice(0, 1)\n    .filter((line) => !/^\\s*runs-on:/.test(line))"
   },
   {
-    "id": "M24",
+    "id": "M38",
     "file": "scripts/guards.ts",
     "description": "workflows: runs-on not normalized",
     "find": "    .filter((line) => !/^\\s*runs-on:/.test(line))\n",
     "replace": ""
   },
   {
-    "id": "M25",
+    "id": "M39",
+    "file": "scripts/guards.ts",
+    "description": "workflows: any host accepted as the uses: prefix",
+    "find": "https:\\/\\/github\\.com\\/",
+    "replace": "https:\\/\\/[^/]+\\/"
+  },
+  {
+    "id": "M40",
+    "file": "scripts/guards.ts",
+    "description": "workflows: trailing whitespace significant",
+    "find": "    .join(\"\\n\")\n    .trimEnd();",
+    "replace": "    .join(\"\\n\");"
+  },
+  {
+    "id": "M41",
     "file": "scripts/mutate.ts",
     "description": "applyMutant accepts multiple matches",
     "find": "if (count !== 1)",
     "replace": "if (count < 1)"
+  },
+  {
+    "id": "M42",
+    "file": "scripts/mutate.ts",
+    "description": "validateMutants accepts an empty list",
+    "find": "if (mutants.length === 0) return [\"no mutants\"];",
+    "replace": ""
+  },
+  {
+    "id": "M43",
+    "file": "scripts/mutate.ts",
+    "description": "classify reports survivors as killed",
+    "find": "return exitCode === 0 ? \"survived\" : \"killed\";",
+    "replace": "return \"killed\";"
+  },
+  {
+    "id": "M44",
+    "file": "scripts/mutate.ts",
+    "description": "classify counts a signal as a kill",
+    "find": "if (exitCode === null) return \"error\";",
+    "replace": ""
+  },
+  {
+    "id": "M45",
+    "file": "scripts/mutate.ts",
+    "description": "preflight ignores uncommitted changes",
+    "find": "if (dirtyStatus.trim() !== \"\") return",
+    "replace": "if (false) return"
+  },
+  {
+    "id": "M46",
+    "file": "scripts/mutate.ts",
+    "description": "preflight ignores a failing baseline",
+    "find": "if (baselineExitCode !== 0) return",
+    "replace": "if (false) return"
+  },
+  {
+    "id": "M47",
+    "file": "scripts/mutate.ts",
+    "description": "summarize always succeeds",
+    "find": "return results.every((r) => r === \"killed\" || r === \"timeout\") ? 0 : 1;",
+    "replace": "return 0;"
+  },
+  {
+    "id": "M48",
+    "file": "scripts/mutate.ts",
+    "description": "summarize accepts an empty run",
+    "find": "if (results.length === 0) return 1;",
+    "replace": ""
   }
 ]
