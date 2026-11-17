@@ -600,5 +600,110 @@
     "description": "duplicate ids across files accepted",
     "find": "  if (errors.length === 0) errors.push(...validateMutants(mutants));\n",
     "replace": ""
+  },
+  {
+    "id": "C87",
+    "file": "src/stream-text.ts",
+    "description": "break doesn't abort when the caller passed a signal",
+    "find": ": AbortSignal.any([caller, this.#controller.signal]);",
+    "replace": ": caller;"
+  },
+  {
+    "id": "C88",
+    "file": "src/run.ts",
+    "description": "price asked about the first model, not the one that answered",
+    "find": "const price = options.price?.(modelRef);",
+    "replace": "const price = options.price?.((models as ModelRef[])[0] as ModelRef);"
+  },
+  {
+    "id": "C89",
+    "file": "src/run.ts",
+    "description": "tool schemas ignore the provider target",
+    "find": "prepareTools(options.tools, modelRef.jsonSchemaTarget)",
+    "replace": "prepareTools(options.tools, \"draft-2020-12\")"
+  },
+  {
+    "id": "C90",
+    "file": "src/run.ts",
+    "description": "output schema ignores the provider target",
+    "find": "toJsonSchema(internal.output, modelRef.jsonSchemaTarget)",
+    "replace": "toJsonSchema(internal.output, \"draft-2020-12\")"
+  },
+  {
+    "id": "C91",
+    "file": "src/run.ts",
+    "description": "adapter iterator not closed after an early exit",
+    "find": "const closing = iterator.return?.();",
+    "replace": "const closing = wait ? undefined : iterator.return?.();"
+  },
+  {
+    "id": "C92",
+    "file": "src/messages.ts",
+    "description": "empty toolName accepted",
+    "find": "        if (!nonEmpty(message.toolName)) throw invalid(",
+    "replace": "        if (false) throw invalid("
+  },
+  {
+    "id": "C93",
+    "file": "src/messages.ts",
+    "description": "empty image mediaType accepted",
+    "find": "if (part.mediaType !== undefined && !nonEmpty(part.mediaType)) {",
+    "replace": "if (false) {"
+  },
+  {
+    "id": "C94",
+    "file": "src/messages.ts",
+    "description": "non-string assistant text accepted",
+    "find": "    case \"reasoning\":\n      if (typeof part.text !== \"string\")",
+    "replace": "    case \"reasoning\":\n      if (false)"
+  },
+  {
+    "id": "C95",
+    "file": "src/events.ts",
+    "description": "empty tool-call-end id accepted",
+    "find": "    case \"tool-call-end\":\n      return nonEmpty(event.id);",
+    "replace": "    case \"tool-call-end\":\n      return true;"
+  },
+  {
+    "id": "C96",
+    "file": "src/generate.ts",
+    "description": "repaired tool calls not validated",
+    "find": "toTextResult(second, call.tools)",
+    "replace": "toTextResult(second, undefined)"
+  },
+  {
+    "id": "C97",
+    "file": "src/generate.ts",
+    "description": "output_validation error has no provider",
+    "find": "      provider: repaired.modelRef.provider,\n",
+    "replace": ""
+  },
+  {
+    "id": "C98",
+    "file": "src/stream-text.ts",
+    "description": "next() keeps yielding after return()",
+    "find": "      while (!closed) {",
+    "replace": "      while (true) {"
+  },
+  {
+    "id": "C99",
+    "file": "src/stream-text.ts",
+    "description": "every next() rethrows a hook error",
+    "find": "if (this.#failure !== undefined && !thrown) {",
+    "replace": "if (this.#failure !== undefined) {"
+  },
+  {
+    "id": "C100",
+    "file": "src/run.ts",
+    "description": "resolveModel gets an unrelated signal",
+    "find": "hooks.resolveModel(models, { signal })",
+    "replace": "hooks.resolveModel(models, { signal: new AbortController().signal })"
+  },
+  {
+    "id": "C101",
+    "file": "src/run.ts",
+    "description": "hooks get the caller signal instead of the call's",
+    "find": "kind: internal.kind, signal };",
+    "replace": "kind: internal.kind, signal: options.signal ?? signal };"
   }
 ]
