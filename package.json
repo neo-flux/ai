@@ -3,10 +3,6 @@
   "version": "0.0.0",
   "description": "Provider-neutral TypeScript library for calling LLMs",
   "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "TODO: confirm"
-  },
   "type": "module",
   "sideEffects": false,
   "files": [
