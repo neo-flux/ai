@@ -11,8 +11,7 @@ coverage/
 # raw recordings before scrubbing, never committed
 fixtures/.raw/
 
-# mutation testing
-.stryker-tmp/
+# mutation reports
 reports/
 
 .DS_Store
