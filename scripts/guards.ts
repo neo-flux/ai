@@ -1,4 +1,6 @@
 import { dirname, join } from "node:path";
+import { parseFixture } from "../src/testing/fixture.ts";
+import { ALLOWED_HEADERS } from "./recorder/record.ts";
 
 export interface Specifier {
   specifier: string;
@@ -398,4 +400,134 @@ const SECRET_PATTERNS: [name: string, pattern: RegExp][] = [
 
 export function findSecrets(text: string): string[] {
   return SECRET_PATTERNS.filter(([, pattern]) => pattern.test(text)).map(([name]) => name);
+}
+
+// ---------- Recorded fixtures ----------
+
+export const MAX_FIXTURE_BYTES = 2_000_000;
+
+// Account and request identifiers that must be null in a committed fixture.
+export const FORBIDDEN_FIXTURE_KEYS: readonly string[] = [
+  "user",
+  "safety_identifier",
+  "prompt_cache_key",
+  "conversation",
+  "metadata",
+  "access_programs",
+  "prompt_cache_diagnostics",
+  "inference_geo",
+  "service_tier",
+  "requestID",
+  "workspaceID",
+  "request_id",
+  "organization",
+  "openai-organization",
+  "openai-project",
+  "anthropic-organization-id",
+  "x-request-id",
+  "request-id",
+];
+
+// Provider id shapes. A scrubbed id keeps its prefix and continues with "fixture".
+export const FIXTURE_ID_PATTERN: RegExp =
+  /\b(?:resp|msg|toolu|srvtoolu|call|fc|rs|req|chatcmpl|wrkspc|org|proj)[_-][A-Za-z0-9]{6,}/g;
+const OPAQUE = /^[A-Za-z0-9+/=_-]{24,}$/;
+const OPAQUE_EXEMPT_KEYS = new Set(["model", "type", "object", "name", "kind"]);
+
+const isPlaceholder = (value: string): boolean => value.includes("fixture");
+
+function walkFixture(value: unknown, path: string, key: string, hits: string[]): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, i) => {
+      walkFixture(item, `${path}[${i}]`, key, hits);
+    });
+    return;
+  }
+  if (typeof value === "object" && value !== null) {
+    for (const [k, v] of Object.entries(value)) {
+      const at = path === "" ? k : `${path}.${k}`;
+      if (FORBIDDEN_FIXTURE_KEYS.includes(k) && v !== null && v !== undefined) {
+        hits.push(`forbidden key at ${at}`);
+        continue;
+      }
+      walkFixture(v, at, k, hits);
+    }
+    return;
+  }
+  if (typeof value !== "string") return;
+  for (const match of value.matchAll(FIXTURE_ID_PATTERN)) {
+    if (!isPlaceholder(match[0])) hits.push(`unscrubbed id ${match[0]} at ${path}`);
+  }
+  if (
+    !OPAQUE_EXEMPT_KEYS.has(key) &&
+    OPAQUE.test(value) &&
+    /\d/.test(value) &&
+    /[A-Za-z]/.test(value) &&
+    !isPlaceholder(value)
+  ) {
+    hits.push(`opaque token at ${path}`);
+  }
+}
+
+/** Everything in a fixture file that looks like a secret, an account field or a raw id. */
+export function findFixtureLeaks(text: string): string[] {
+  const leaks: string[] = [];
+  const bytes = new TextEncoder().encode(text).length;
+  if (bytes > MAX_FIXTURE_BYTES) leaks.push(`file is ${bytes} bytes, over ${MAX_FIXTURE_BYTES}`);
+  try {
+    parseFixture(text);
+  } catch (error) {
+    leaks.push(`invalid fixture: ${(error as Error).message}`);
+  }
+  text.split("\n").forEach((line, i) => {
+    if (line.trim() === "") return;
+    const at = `line ${i + 1}`;
+    for (const name of findSecrets(line)) leaks.push(`${at}: ${name}`);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(line);
+    } catch {
+      return;
+    }
+    const hits: string[] = [];
+    walkFixture(parsed, "", "", hits);
+    const record = parsed as { kind?: unknown; error?: { headers?: unknown } };
+    if (record.kind === "error") {
+      const headers = record.error?.headers;
+      for (const name of Object.keys(
+        typeof headers === "object" && headers !== null ? headers : {},
+      )) {
+        if (!ALLOWED_HEADERS.includes(name)) hits.push(`header not allowlisted: ${name}`);
+      }
+    }
+    for (const hit of hits) leaks.push(`${at}: ${hit}`);
+  });
+  return leaks;
+}
+
+/** Every case has a file in each provider directory present; opt-in cases may be absent. */
+export function checkFixtureCoverage(
+  present: Readonly<Record<string, readonly string[]>>,
+  expected: Readonly<Record<string, readonly string[]>>,
+  optIn: readonly string[],
+): string[] {
+  const problems: string[] = [];
+  for (const [provider, files] of Object.entries(present)) {
+    const cases = expected[provider];
+    if (cases === undefined) {
+      problems.push(`unknown provider directory ${provider}`);
+      continue;
+    }
+    for (const id of cases) {
+      if (!optIn.includes(id) && !files.includes(`${id}.jsonl`)) {
+        problems.push(`${provider}: missing ${id}`);
+      }
+    }
+    for (const name of files) {
+      if (!cases.includes(name.replace(/\.jsonl$/, "")) || !name.endsWith(".jsonl")) {
+        problems.push(`${provider}: unknown file ${name}`);
+      }
+    }
+  }
+  return problems;
 }

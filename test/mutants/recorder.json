@@ -313,5 +313,89 @@
     "description": "OpenAI requests stored server-side",
     "find": "    store: false,\n",
     "replace": ""
+  },
+  {
+    "id": "R46",
+    "file": "scripts/guards.ts",
+    "description": "guard: forbidden key list misses workspaceID",
+    "find": "  \"workspaceID\",\n  \"request_id\",",
+    "replace": "  \"request_id\","
+  },
+  {
+    "id": "R47",
+    "file": "scripts/guards.ts",
+    "description": "guard: forbidden keys ignored",
+    "find": "      if (FORBIDDEN_FIXTURE_KEYS.includes(k) && v !== null && v !== undefined) {",
+    "replace": "      if (false) {"
+  },
+  {
+    "id": "R48",
+    "file": "scripts/guards.ts",
+    "description": "guard: unplaceholdered id check off",
+    "find": "    if (!isPlaceholder(match[0])) hits.push(`unscrubbed id ${match[0]} at ${path}`);",
+    "replace": "    void match;"
+  },
+  {
+    "id": "R49",
+    "file": "scripts/guards.ts",
+    "description": "guard: long-token threshold raised to 64",
+    "find": "const OPAQUE = /^[A-Za-z0-9+/=_-]{24,}$/;",
+    "replace": "const OPAQUE = /^[A-Za-z0-9+/=_-]{64,}$/;"
+  },
+  {
+    "id": "R50",
+    "file": "scripts/guards.ts",
+    "description": "guard: model ids not exempt from the token check",
+    "find": "const OPAQUE_EXEMPT_KEYS = new Set([\"model\", \"type\", \"object\", \"name\", \"kind\"]);",
+    "replace": "const OPAQUE_EXEMPT_KEYS = new Set([\"type\", \"object\", \"name\", \"kind\"]);"
+  },
+  {
+    "id": "R51",
+    "file": "scripts/guards.ts",
+    "description": "guard: secrets not scanned",
+    "find": "    for (const name of findSecrets(line)) leaks.push(`${at}: ${name}`);\n",
+    "replace": ""
+  },
+  {
+    "id": "R52",
+    "file": "scripts/guards.ts",
+    "description": "guard: error headers not checked",
+    "find": "        if (!ALLOWED_HEADERS.includes(name)) hits.push(`header not allowlisted: ${name}`);",
+    "replace": "        void name;"
+  },
+  {
+    "id": "R53",
+    "file": "scripts/guards.ts",
+    "description": "guard: size limit off",
+    "find": "  if (bytes > MAX_FIXTURE_BYTES) leaks.push",
+    "replace": "  if (false) leaks.push"
+  },
+  {
+    "id": "R54",
+    "file": "scripts/guards.ts",
+    "description": "guard: invalid fixture accepted",
+    "find": "    leaks.push(`invalid fixture: ${(error as Error).message}`);",
+    "replace": "    void error;"
+  },
+  {
+    "id": "R55",
+    "file": "scripts/guards.ts",
+    "description": "coverage: unknown files ignored",
+    "find": "        problems.push(`${provider}: unknown file ${name}`);",
+    "replace": "        void name;"
+  },
+  {
+    "id": "R56",
+    "file": "scripts/guards.ts",
+    "description": "coverage: opt-in cases required",
+    "find": "      if (!optIn.includes(id) && !files.includes(`${id}.jsonl`)) {",
+    "replace": "      if (!files.includes(`${id}.jsonl`)) {"
+  },
+  {
+    "id": "R57",
+    "file": "scripts/guards.ts",
+    "description": "coverage: missing cases ignored",
+    "find": "        problems.push(`${provider}: missing ${id}`);",
+    "replace": "        void id;"
   }
 ]
