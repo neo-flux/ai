@@ -247,3 +247,26 @@ describe("replayClient: audit follow-ups", () => {
     expect(await drain(await create({}))).toEqual([{ n: 1 }, { n: 2 }]);
   });
 });
+
+describe("replayClient: security review follow-ups", () => {
+  test("a __proto__ key in a recorded error can't replace the error's prototype", async () => {
+    const hostile = JSON.parse(
+      JSON.stringify({ ...recordedError, extra: 1 }).replace(
+        '"extra":1',
+        '"__proto__":{"polluted":"yes"}',
+      ),
+    );
+    const create = method(
+      replayClient(
+        fixture("responses", [
+          { outcome: "threw", error: { phase: "create", afterChunks: 0, error: hostile } },
+        ]),
+      ),
+      "responses.create",
+    );
+    const thrown = (await create({}).catch((e: unknown) => e)) as Record<string, unknown>;
+    expect(thrown).toBeInstanceOf(Error);
+    expect(thrown.polluted).toBeUndefined();
+    expect(thrown.code).toBe("rate_limit_exceeded");
+  });
+});

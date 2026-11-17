@@ -73,8 +73,8 @@
     "id": "R11",
     "file": "src/testing/replay.ts",
     "description": "headers left as a plain record",
-    "find": "    headers: new Headers(headers),",
-    "replace": "    headers,"
+    "find": "headers: new Headers(headers) });",
+    "replace": "headers });"
   },
   {
     "id": "R12",
@@ -101,8 +101,8 @@
     "id": "R15",
     "file": "src/testing/replay.ts",
     "description": "recorded status null kept as null",
-    "find": "    status: status ?? undefined,",
-    "replace": "    status,"
+    "find": "{ status: status ?? undefined,",
+    "replace": "{ status,"
   },
   {
     "id": "R16",
@@ -689,151 +689,158 @@
     "id": "R99",
     "file": "src/testing/replay.ts",
     "description": "replay: rebuilt error drops recorded fields",
-    "find": "  const error = Object.assign(new Error(message ?? \"\"), fields, {",
-    "replace": "  const error = Object.assign(new Error(message ?? \"\"), {"
+    "find": "  for (const [key, value] of Object.entries(fields)) {",
+    "replace": "  for (const [key, value] of Object.entries({})) {"
   },
   {
     "id": "R100",
+    "file": "src/testing/replay.ts",
+    "description": "replay: prototype keys assigned",
+    "find": "    if (key === \"__proto__\" || key === \"constructor\" || key === \"prototype\") continue;\n    Object.defineProperty(error, key, {\n      value,\n      enumerable: true,\n      writable: true,\n      configurable: true,\n    });",
+    "replace": "    Object.assign(error, { [key]: value });"
+  },
+  {
+    "id": "R101",
     "file": "src/testing/fixture.ts",
     "description": "chunk after an error accepted",
     "find": "      if (open.error !== undefined) throw new TypeError(`${at}: chunk after the error`);\n",
     "replace": ""
   },
   {
-    "id": "R101",
+    "id": "R102",
     "file": "src/testing/fixture.ts",
     "description": "second error line accepted",
     "find": "      if (open.error !== undefined)\n        throw new TypeError(`${at}: second error for call ${open.index}`);\n",
     "replace": ""
   },
   {
-    "id": "R102",
+    "id": "R103",
     "file": "scripts/recorder/record.ts",
     "description": "outcome taken from the plan, not the signal",
     "find": "    if (controller.signal.aborted) call.outcome = \"returned-after-abort\";",
     "replace": "    if (planned.abortAfterChunks !== undefined) call.outcome = \"returned-after-abort\";"
   },
   {
-    "id": "R103",
+    "id": "R104",
     "file": "scripts/recorder/cli.ts",
     "description": "env: custom headers allowed",
     "find": "  \"OPENAI_CUSTOM_HEADERS\",\n",
     "replace": ""
   },
   {
-    "id": "R104",
+    "id": "R105",
     "file": "scripts/recorder/cli.ts",
     "description": "env: anthropic auth token allowed",
     "find": "  \"ANTHROPIC_AUTH_TOKEN\",\n",
     "replace": ""
   },
   {
-    "id": "R105",
+    "id": "R106",
     "file": "scripts/recorder/cli.ts",
     "description": "env: telemetry prefix allowed",
     "find": "const UNSAFE_PREFIXES: readonly string[] = [\"ANTHROPIC_OPEN_TELEMETRY\"];",
     "replace": "const UNSAFE_PREFIXES: readonly string[] = [];"
   },
   {
-    "id": "R106",
+    "id": "R107",
     "file": "scripts/recorder/cli.ts",
     "description": "env: http URLs accepted",
     "find": "      ok = new URL(value).protocol === \"https:\";",
     "replace": "      ok = new URL(value).protocol !== \"\";"
   },
   {
-    "id": "R107",
+    "id": "R108",
     "file": "scripts/recorder/cli.ts",
     "description": "env: organization not pinned off",
     "find": "return { apiKey, maxRetries: 0, baseURL, organization: null, project: null };",
     "replace": "return { apiKey, maxRetries: 0, baseURL };"
   },
   {
-    "id": "R108",
+    "id": "R109",
     "file": "scripts/recorder/cli.ts",
     "description": "env: anthropic auth token not pinned off",
     "find": "return { apiKey, maxRetries: 0, baseURL: OFFICIAL_BASE_URL.anthropic, authToken: null };",
     "replace": "return { apiKey, maxRetries: 0, baseURL: OFFICIAL_BASE_URL.anthropic };"
   },
   {
-    "id": "R109",
+    "id": "R110",
     "file": "scripts/recorder/scrub.ts",
     "description": "scrub: personal data kept",
     "find": "    return PERSONAL_PATTERNS.reduce((out, [, pattern]) => out.replace(pattern, \"[scrubbed]\"), ids);",
     "replace": "    return ids;"
   },
   {
-    "id": "R110",
+    "id": "R111",
     "file": "scripts/recorder/scrub.ts",
     "description": "scrub: *_id keys not treated as ids",
     "find": "      if (ID_KEYS.has(key) || key.endsWith(\"_id\")) return this.id(value);",
     "replace": "      if (ID_KEYS.has(key)) return this.id(value);"
   },
   {
-    "id": "R111",
+    "id": "R112",
     "file": "scripts/recorder/scrub.ts",
     "description": "scrub: prototype-changing keys kept",
     "find": "          .filter(([k]) => !DANGEROUS_KEYS.has(k))\n",
     "replace": ""
   },
   {
-    "id": "R112",
+    "id": "R113",
     "file": "scripts/guards.ts",
     "description": "guard: appeal_url not forbidden",
     "find": "  \"appeal_url\",\n",
     "replace": ""
   },
   {
-    "id": "R113",
+    "id": "R114",
     "file": "scripts/guards.ts",
     "description": "guard: digit-free org ids missed",
     "find": "|(?:org|proj)[_-][A-Za-z0-9]{12,}",
     "replace": ""
   },
   {
-    "id": "R114",
+    "id": "R115",
     "file": "scripts/guards.ts",
     "description": "guard: emails missed",
     "find": "  [\"email address\", /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/g],\n",
     "replace": ""
   },
   {
-    "id": "R115",
+    "id": "R116",
     "file": "scripts/guards.ts",
     "description": "guard: masked keys missed",
     "find": "  [\"masked key\", /\\*{3,}[A-Za-z0-9]{2,8}/g],\n",
     "replace": ""
   },
   {
-    "id": "R116",
+    "id": "R117",
     "file": "scripts/guards.ts",
     "description": "guard: HTML bodies missed",
     "find": "  [\"HTML body\", /<!DOCTYPE|<html/i],\n",
     "replace": ""
   },
   {
-    "id": "R117",
+    "id": "R118",
     "file": "scripts/guards.ts",
     "description": "guard: query-string URLs missed",
     "find": "  [\"URL with a query string\", /https?:\\/\\/[^\\s\"']+\\?[^\\s\"']+/],\n",
     "replace": ""
   },
   {
-    "id": "R118",
+    "id": "R119",
     "file": "scripts/guards.ts",
     "description": "guard: rate-limit text missed",
     "find": "  [\"rate-limit details\", /rate limit|tokens per min|requests per min|\\bLimit \\d/i],\n",
     "replace": ""
   },
   {
-    "id": "R119",
+    "id": "R120",
     "file": "scripts/guards.ts",
     "description": "guard: 429 errors accepted",
     "find": "?.status === 429) {",
     "replace": "?.status === -1) {"
   },
   {
-    "id": "R120",
+    "id": "R121",
     "file": "scripts/guards.ts",
     "description": "guard: prototype-changing keys accepted",
     "find": "      if (DANGEROUS_KEYS.has(k)) {",

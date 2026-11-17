@@ -21,10 +21,18 @@ export interface ReplayClient {
 // Rebuilt as an Error with the SDK's fields, so mapping by shape sees what it would see live.
 function rebuild(recorded: RecordedError): Error {
   const { name, status, message, headers, ...fields } = recorded;
-  const error = Object.assign(new Error(message ?? ""), fields, {
-    status: status ?? undefined,
-    headers: new Headers(headers),
-  });
+  const error = new Error(message ?? "");
+  // Defined, not assigned: a `__proto__` key in a fixture must stay an ordinary field name.
+  for (const [key, value] of Object.entries(fields)) {
+    if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
+    Object.defineProperty(error, key, {
+      value,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
+  }
+  Object.assign(error, { status: status ?? undefined, headers: new Headers(headers) });
   if (name !== null) error.name = name;
   return error;
 }
