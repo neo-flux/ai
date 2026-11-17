@@ -30,6 +30,31 @@ export async function check(root, testing) {
   if (generated.text !== '{"ok":true}') throw new Error(`generate: ${generated.text}`);
   if (fake.calls.length !== 2) throw new Error(`calls: ${fake.calls.length}`);
 
+  const fixture = testing.parseFixture(
+    [
+      {
+        kind: "meta",
+        format: 1,
+        provider: "smoke",
+        case: "text",
+        api: "messages",
+        sdk: "none@0",
+        model: "smoke",
+        recordedOn: "2026-01-01",
+      },
+      { kind: "call", index: 0, request: {}, options: {} },
+      { kind: "chunk", call: 0, data: { type: "message_stop" } },
+      { kind: "end", call: 0, outcome: "completed" },
+    ]
+      .map((line) => JSON.stringify(line))
+      .join("\n"),
+  );
+  const replayed = [];
+  for await (const item of await testing.replayClient(fixture).messages.create({})) {
+    replayed.push(item);
+  }
+  if (JSON.stringify(replayed) !== '[{"type":"message_stop"}]') throw new Error("replay");
+
   const error = new root.AIError({ code: "rate_limit" });
   if (!root.isAIError(error) || !error.retryable) throw new Error("AIError");
 }
