@@ -38,8 +38,9 @@ class Scrubber {
   #ids = new Map<string, string>();
   #opaque = new Map<string, string>();
 
+  // Empty values stay empty: SDK streams use "" for "not yet known", and replay must match.
   id(raw: string): string {
-    if (isPlaceholder(raw)) return raw;
+    if (raw === "" || isPlaceholder(raw)) return raw;
     let placeholder = this.#ids.get(raw);
     if (placeholder === undefined) {
       const prefix = /^([A-Za-z]+[_-])/.exec(raw)?.[1] ?? "id_";
@@ -50,7 +51,7 @@ class Scrubber {
   }
 
   opaque(raw: string): string {
-    if (isPlaceholder(raw)) return raw;
+    if (raw === "" || isPlaceholder(raw)) return raw;
     let placeholder = this.#opaque.get(raw);
     if (placeholder === undefined) {
       placeholder = `fixture-opaque-${number(this.#opaque.size + 1)}`;
@@ -69,6 +70,8 @@ class Scrubber {
     if (FORBIDDEN_FIXTURE_KEYS.includes(key)) return value === undefined ? undefined : null;
     if (key === "headers") return allowlistHeaders(value);
     if (typeof value === "string") {
+      // Random padding that normalizes payload sizes; meaningless, and it trips the token guard.
+      if (key === "obfuscation") return "";
       if (ID_KEYS.has(key)) return this.id(value);
       if (OPAQUE_KEYS.has(key)) return this.opaque(value);
       if (key === "data" && parent?.type === "redacted_thinking") return this.opaque(value);

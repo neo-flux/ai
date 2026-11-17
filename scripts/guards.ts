@@ -428,9 +428,10 @@ export const FORBIDDEN_FIXTURE_KEYS: readonly string[] = [
   "request-id",
 ];
 
-// Provider id shapes. A scrubbed id keeps its prefix and continues with "fixture".
+// Provider id shapes, and UUIDs. A scrubbed id keeps its prefix and continues with "fixture".
+// The suffix must contain a digit, so words like "call_weather" in model text are left alone.
 export const FIXTURE_ID_PATTERN: RegExp =
-  /\b(?:resp|msg|toolu|srvtoolu|call|fc|rs|req|chatcmpl|wrkspc|org|proj)[_-][A-Za-z0-9]{6,}/g;
+  /\b(?:(?:resp|msg|toolu|srvtoolu|call|fc|rs|req|chatcmpl|wrkspc|org|proj)[_-](?=[A-Za-z0-9]*\d)[A-Za-z0-9]{6,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\b/g;
 const OPAQUE = /^[A-Za-z0-9+/=_-]{24,}$/;
 const OPAQUE_EXEMPT_KEYS = new Set(["model", "type", "object", "name", "kind"]);
 

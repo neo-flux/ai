@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { findFixtureLeaks, findSecrets } from "../../scripts/guards.ts";
+import { FORBIDDEN_FIXTURE_KEYS, findFixtureLeaks, findSecrets } from "../../scripts/guards.ts";
 import { scrubFixture, scrubText } from "../../scripts/recorder/scrub.ts";
 import { type Fixture, serializeFixture } from "../../src/testing/fixture.ts";
 
@@ -278,5 +278,75 @@ describe("scrubText", () => {
     expect(() => scrubText(leaky)).toThrow(
       /scrubber left 1 leak\(s\):\nline 3: opaque token at data.new_blob_field/,
     );
+  });
+});
+
+describe("scrubFixture: audit follow-ups", () => {
+  const one = (data: unknown) => scrubFixture(fixture([{ chunks: [data] }])).calls[0]?.chunks[0];
+
+  test("every forbidden account field is nulled", () => {
+    for (const key of FORBIDDEN_FIXTURE_KEYS) {
+      expect({ key, out: one({ [key]: "value" }) }).toEqual({ key, out: { [key]: null } });
+    }
+  });
+
+  test("Chat Completions created timestamps are pinned", () => {
+    expect(one({ id: "chatcmpl-AbC123dEf456", created: 1763380000 })).toEqual({
+      id: "chatcmpl-fixture0001",
+      created: 1700000000,
+    });
+  });
+
+  test("a request id inside an SDK error message is replaced", () => {
+    const message = `401 ${JSON.stringify({ type: "error", error: { type: "authentication_error" }, request_id: "req_011CXyz123abcDEF" })}`;
+    const out = scrubFixture(
+      fixture([
+        {
+          outcome: "threw",
+          error: {
+            phase: "create",
+            afterChunks: 0,
+            error: { name: "AuthenticationError", status: 401, message, error: null, headers: {} },
+          },
+        },
+      ]),
+    );
+    expect(out.calls[0]?.error?.error.message).toContain("req_fixture0001");
+    expect(out.calls[0]?.error?.error.message).not.toContain("req_011CXyz123abcDEF");
+  });
+
+  test("UUIDs in text are replaced", () => {
+    expect(one({ text: "trace 7d6e2c1a-90b1-4f6e-8a3b-1c2d3e4f5a6b done" })).toEqual({
+      text: "trace id_fixture0001 done",
+    });
+  });
+
+  test("id-like words in model text are left alone", () => {
+    expect(one({ delta: "I will call_weather now and resp_onsibly msg_board it" })).toEqual({
+      delta: "I will call_weather now and resp_onsibly msg_board it",
+    });
+  });
+
+  test("empty strings stay empty under id and opaque keys", () => {
+    expect(one({ id: "", signature: "", system_fingerprint: "", call_id: "" })).toEqual({
+      id: "",
+      signature: "",
+      system_fingerprint: "",
+      call_id: "",
+    });
+  });
+
+  test("OpenAI stream obfuscation padding is blanked", () => {
+    expect(
+      one({
+        type: "response.output_text.delta",
+        delta: "Hi",
+        obfuscation: "Zx9QmK2pLr7TtV4wYb8NcE",
+      }),
+    ).toEqual({
+      type: "response.output_text.delta",
+      delta: "Hi",
+      obfuscation: "",
+    });
   });
 });

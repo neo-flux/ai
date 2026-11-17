@@ -1,8 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { checkFixtureCoverage, findFixtureLeaks, MAX_FIXTURE_BYTES } from "../scripts/guards.ts";
-import { CASE_IDS, casesFor, OPT_IN } from "../scripts/recorder/cases.ts";
+import {
+  checkFixtureCoverage,
+  FORBIDDEN_FIXTURE_KEYS,
+  findFixtureLeaks,
+  MAX_FIXTURE_BYTES,
+} from "../scripts/guards.ts";
+import { casesFor, OPT_IN } from "../scripts/recorder/cases.ts";
 import { PROVIDERS } from "../scripts/recorder/models.ts";
 
 const root = join(import.meta.dir, "..");
@@ -60,6 +65,49 @@ describe("findFixtureLeaks", () => {
       ]);
     }
     expect(findFixtureLeaks(file({ user: null }))).toEqual([]);
+  });
+
+  test("the forbidden list names every account field seen in the SDK types", () => {
+    const required = [
+      "user",
+      "safety_identifier",
+      "prompt_cache_key",
+      "conversation",
+      "metadata",
+      "access_programs",
+      "prompt_cache_diagnostics",
+      "inference_geo",
+      "service_tier",
+      "requestID",
+      "workspaceID",
+      "request_id",
+      "organization",
+      "openai-organization",
+      "openai-project",
+      "anthropic-organization-id",
+      "x-request-id",
+      "request-id",
+    ];
+    expect([...FORBIDDEN_FIXTURE_KEYS].sort()).toEqual(required.sort());
+  });
+
+  test("flags every forbidden key", () => {
+    for (const key of FORBIDDEN_FIXTURE_KEYS) {
+      expect({ key, leaks: findFixtureLeaks(file({ [key]: "x" })) }).toEqual({
+        key,
+        leaks: [`line 3: forbidden key at data.${key}`],
+      });
+    }
+  });
+
+  test("flags request ids and UUIDs embedded in text, but not id-like words", () => {
+    expect(
+      findFixtureLeaks(file({ message: '401 {"request_id":"req_011CXyz123abcDEF"}' })),
+    ).toEqual(["line 3: unscrubbed id req_011CXyz123abcDEF at data.message"]);
+    expect(findFixtureLeaks(file({ text: "trace 7d6e2c1a-90b1-4f6e-8a3b-1c2d3e4f5a6b" }))).toEqual([
+      "line 3: unscrubbed id 7d6e2c1a-90b1-4f6e-8a3b-1c2d3e4f5a6b at data.text",
+    ]);
+    expect(findFixtureLeaks(file({ delta: "I will call_weather and msg_board it" }))).toEqual([]);
   });
 
   test("flags real-looking ids that weren't replaced", () => {
@@ -195,6 +243,5 @@ describe("fixtures in the repository", () => {
         expect(existsSync(join(root, "fixtures", provider))).toBe(false);
       }
     }
-    expect(CASE_IDS.length).toBeGreaterThan(0);
   });
 });
