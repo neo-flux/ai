@@ -68,6 +68,8 @@ Recording calls the real APIs and spends credit, so it never runs in CI.
    | `DASHSCOPE_API_KEY`, `NEOFLUX_AI_QWEN_BASE_URL`, `NEOFLUX_AI_QWEN_MODELS_URL` | Qwen      |
 
    The base URLs have no defaults in the code. See the README for example values.
+
+   The three `NEOFLUX_AI_*` URLs must be `https`. The recorder refuses to start while any SDK variable is set that could redirect a request, add headers or attach an account: `OPENAI_BASE_URL`, `OPENAI_CUSTOM_HEADERS`, `OPENAI_ORG_ID`, `OPENAI_PROJECT_ID`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_CUSTOM_HEADERS`, `ANTHROPIC_AUTH_TOKEN` or `ANTHROPIC_OPEN_TELEMETRY*`. Its clients pin the official base URLs and switch off organization, project and auth-token lookups, so only the configured key is sent, and only to the configured host.
 3. Check the plan. This sends nothing:
 
    ```sh
@@ -103,4 +105,13 @@ Bodies are scrubbed with a denylist plus patterns. Headers are reduced to an all
 - **Credentials:** any credential-shaped string, in any field, becomes `[scrubbed]`.
 - **Long strings:** strings over 20,000 characters (the `error-context` input) become `[scrubbed: N chars]`.
 
-The scrubber then runs the fixture guard on its own output and refuses to write a file it still finds something in. That covers secrets, account fields, unreplaced ids, long opaque tokens, unlisted headers, invalid structure and files over 2 MB. A refusal means the scrubber needs a new rule, not that the file should be edited by hand. The same guard runs over every committed fixture in `bun test`.
+The scrubber then runs the fixture guard on its own output and refuses to write a file it still finds something in. That covers secrets, account fields, unreplaced ids, long opaque tokens, unlisted headers, invalid structure and files over 2 MB. Emails, IP addresses and masked key tails (`****Ab1x`) are redacted. A few things make the guard refuse the file outright instead, because no safe rewrite exists:
+
+- rate-limit details or any 429, which reveal the account's tier;
+- HTML error pages;
+- URLs with a query string;
+- `__proto__`-style keys.
+
+If `error-context` comes back as a 429, the filler went over a per-minute token limit before it reached the context window. Don't commit that recording.
+
+A refusal for anything else means the scrubber needs a new rule, not that the file should be edited by hand. Refusal messages quote the offending values, so don't paste them anywhere public. The guard can also refuse opaque-looking strings it can't tell apart from tokens, such as base64 or hex in model output. The synthetic prompts are chosen to avoid those. The same guard runs over every committed fixture in `bun test`.
