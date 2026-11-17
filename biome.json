@@ -50,6 +50,9 @@
             "noNodejsModules": "error",
             "noProcessGlobal": "error"
           },
+          "suspicious": {
+            "noExplicitAny": "error"
+          },
           "style": {
             "noDefaultExport": "error",
             "noCommonJs": "error"

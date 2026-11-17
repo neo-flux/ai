@@ -183,33 +183,34 @@ export function checkSourceImports(source: string, typeOnlyPeers: readonly strin
     .map((s) => s.specifier);
 }
 
+// Matched as whole identifiers anywhere in code, including after "." and as object keys,
+// so casts and destructuring cannot reach them. globalThis and self are banned outright
+// because they make every other name reachable through a computed key.
 const RUNTIME_GLOBALS = [
   "Bun",
   "Deno",
   "process",
   "Buffer",
   "require",
+  "module",
+  "exports",
   "__dirname",
   "__filename",
+  "setImmediate",
+  "clearImmediate",
   "window",
   "document",
+  "localStorage",
+  "sessionStorage",
   "global",
+  "globalThis",
+  "self",
 ];
 
 export function findRuntimeGlobals(source: string): string[] {
   const { code } = mask(source);
-  const names = RUNTIME_GLOBALS.join("|");
-  const found: { index: number; name: string }[] = [];
-  for (const match of code.matchAll(new RegExp(`(?<![\\w$.])(${names})\\b`, "g"))) {
-    const objectKey =
-      /[{,]\s*$/.test(code.slice(0, match.index)) &&
-      /^\s*:/.test(code.slice(match.index + match[0].length));
-    if (!objectKey) found.push({ index: match.index, name: match[1] as string });
-  }
-  for (const match of code.matchAll(new RegExp(`\\bglobalThis\\s*\\.\\s*(${names})\\b`, "g"))) {
-    found.push({ index: match.index, name: match[1] as string });
-  }
-  return found.sort((a, b) => a.index - b.index).map((f) => f.name);
+  const pattern = new RegExp(`(?<![\\w$])(${RUNTIME_GLOBALS.join("|")})(?![\\w$])`, "g");
+  return [...code.matchAll(pattern)].map((match) => match[1] as string);
 }
 
 export interface GraphViolation {

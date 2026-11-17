@@ -154,12 +154,17 @@ describe("findRuntimeGlobals", () => {
       "process.env.X;",
       "Buffer.from('x');",
       "require('x');",
+      "module.exports = 1;",
       "__dirname;",
       "__filename;",
+      "setImmediate(f);",
+      "clearImmediate(h);",
       "window.fetch;",
       "document.title;",
+      "localStorage.x;",
+      "sessionStorage.x;",
       "global.x;",
-      "globalThis.Bun;",
+      "self.postMessage;",
     ].join("\n");
     expect(findRuntimeGlobals(code)).toEqual([
       "Bun",
@@ -167,26 +172,48 @@ describe("findRuntimeGlobals", () => {
       "process",
       "Buffer",
       "require",
+      "module",
+      "exports",
       "__dirname",
       "__filename",
+      "setImmediate",
+      "clearImmediate",
       "window",
       "document",
+      "localStorage",
+      "sessionStorage",
       "global",
-      "Bun",
+      "self",
     ]);
   });
 
-  test("ignores look-alike identifiers, properties, strings and comments", () => {
+  test("flags access through casts, optional chaining, destructuring and computed keys", () => {
+    const cases: [string, string[]][] = [
+      ["export const env = (globalThis as any).process?.env;", ["globalThis", "process"]],
+      ["const { process: proc } = globalThis as unknown as T;", ["process", "globalThis"]],
+      ['export const d = Reflect.get(globalThis, "Deno");', ["globalThis"]],
+      ["globalThis?.process;", ["globalThis", "process"]],
+      ['globalThis["process"];', ["globalThis"]],
+      ["obj.process();", ["process"]],
+      ["const k = { process: 1 };", ["process"]],
+    ];
+    for (const [code, expected] of cases) {
+      expect({ code, found: findRuntimeGlobals(code) }).toEqual({ code, found: expected });
+    }
+  });
+
+  test("ignores look-alike identifiers, strings and comments", () => {
     const code = [
       "const processed = 1;",
       "const bunny = 2;",
       "const myBuffer = 3;",
-      "obj.process();",
-      "const k = { process: 1 };",
+      "const $process = 4;",
+      "const process_ = 5;",
+      "const globalThisLike = 6;",
+      "const selfish = 7;",
       'const s = "process.env";',
       "// Bun.file()",
       "/* Deno.env */",
-      "const globalThisLike = 4;",
     ].join("\n");
     expect(findRuntimeGlobals(code)).toEqual([]);
   });
