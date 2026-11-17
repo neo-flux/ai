@@ -87,6 +87,7 @@ describe("findFixtureLeaks", () => {
       "anthropic-organization-id",
       "x-request-id",
       "request-id",
+      "appeal_url",
     ];
     expect([...FORBIDDEN_FIXTURE_KEYS].sort()).toEqual(required.sort());
   });
@@ -147,8 +148,8 @@ describe("findFixtureLeaks", () => {
         phase: "create",
         afterChunks: 0,
         error: {
-          name: "RateLimitError",
-          status: 429,
+          name: "BadRequestError",
+          status: 400,
           message: null,
           error: null,
           headers: { "retry-after": "1", "x-ratelimit-remaining-requests": "9" },
@@ -243,5 +244,72 @@ describe("fixtures in the repository", () => {
         expect(existsSync(join(root, "fixtures", provider))).toBe(false);
       }
     }
+  });
+});
+
+describe("findFixtureLeaks: message content", () => {
+  const leaks = (data: unknown) => findFixtureLeaks(file(data));
+  const errorFile = (status: number, message: string): string =>
+    `${[
+      meta,
+      { kind: "call", index: 0, request: {}, options: {} },
+      {
+        kind: "error",
+        call: 0,
+        phase: "create",
+        afterChunks: 0,
+        error: { name: "APIError", status, message, error: null, headers: {} },
+      },
+      { kind: "end", call: 0, outcome: "threw" },
+    ]
+      .map((l) => JSON.stringify(l))
+      .join("\n")}\n`;
+
+  test("flags personal and network data in any string", () => {
+    expect(leaks({ message: "contact owner@example.com" })).toEqual([
+      "line 3: email address at data.message",
+    ]);
+    expect(leaks({ message: "Your IP: 203.0.113.57" })).toEqual([
+      "line 3: IP address at data.message",
+    ]);
+    expect(leaks({ message: "from 2001:db8:85a3:0:0:8a2e:370:7334" })).toEqual([
+      "line 3: IP address at data.message",
+    ]);
+    expect(leaks({ message: "Incorrect API key provided: sk-proj-****Ab1x" })).toEqual([
+      "line 3: masked key at data.message",
+    ]);
+    expect(leaks({ message: "<!DOCTYPE html><html><body>520</body></html>" })).toEqual([
+      "line 3: HTML body at data.message",
+    ]);
+    expect(leaks({ appeal: "see https://example.test/appeal?ticket=abc&user=1" })).toEqual([
+      "line 3: URL with a query string at data.appeal",
+    ]);
+  });
+
+  test("flags rate-limit details, which reveal the account tier", () => {
+    expect(leaks({ message: "Request too large on tokens per min (TPM): Limit 200000" })).toEqual([
+      "line 3: rate-limit details at data.message",
+    ]);
+    expect(findFixtureLeaks(errorFile(429, "slow down"))).toEqual([
+      "line 3: rate-limit error (429)",
+    ]);
+  });
+
+  test("flags organization and project ids even without digits", () => {
+    expect(leaks({ message: "in organization org-AbCdEfGhIjKlMnOpQrStUvWx" })).toEqual([
+      "line 3: unscrubbed id org-AbCdEfGhIjKlMnOpQrStUvWx at data.message",
+    ]);
+  });
+
+  test("flags prototype-changing keys", () => {
+    expect(findFixtureLeaks(file(JSON.parse('{"__proto__":{"x":1}}')))).toEqual([
+      "line 3: dangerous key at data.__proto__",
+    ]);
+  });
+
+  test("ordinary text, versions and URLs without queries pass", () => {
+    expect(
+      leaks({ delta: "Version 7.57.0 of https://example.test/docs is out. 3 * 4 = 12." }),
+    ).toEqual([]);
   });
 });

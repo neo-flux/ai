@@ -426,13 +426,29 @@ export const FORBIDDEN_FIXTURE_KEYS: readonly string[] = [
   "anthropic-organization-id",
   "x-request-id",
   "request-id",
+  "appeal_url",
 ];
 
 // Provider id shapes, and UUIDs. A scrubbed id keeps its prefix and continues with "fixture".
 // The suffix must contain a digit, so words like "call_weather" in model text are left alone.
 export const FIXTURE_ID_PATTERN: RegExp =
-  /\b(?:(?:resp|msg|toolu|srvtoolu|call|fc|rs|req|chatcmpl|wrkspc|org|proj)[_-](?=[A-Za-z0-9]*\d)[A-Za-z0-9]{6,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\b/g;
+  /\b(?:(?:resp|msg|toolu|srvtoolu|call|fc|rs|req|chatcmpl|wrkspc|org|proj)[_-](?=[A-Za-z0-9]*\d)[A-Za-z0-9]{6,}|(?:org|proj)[_-][A-Za-z0-9]{12,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\b/g;
 const OPAQUE = /^[A-Za-z0-9+/=_-]{24,}$/;
+
+// Personal and network data that error messages can carry. The scrubber redacts these.
+export const PERSONAL_PATTERNS: readonly [name: string, pattern: RegExp][] = [
+  ["email address", /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g],
+  ["IP address", /\b(?:\d{1,3}\.){3}\d{1,3}\b/g],
+  ["IP address", /\b(?:[0-9a-fA-F]{1,4}:){4,7}[0-9a-fA-F]{1,4}\b/g],
+  ["masked key", /\*{3,}[A-Za-z0-9]{2,8}/g],
+];
+// Content that means "don't commit this recording". The scrubber leaves it, so the guard refuses.
+const REFUSED_PATTERNS: readonly [name: string, pattern: RegExp][] = [
+  ["HTML body", /<!DOCTYPE|<html/i],
+  ["URL with a query string", /https?:\/\/[^\s"']+\?[^\s"']+/],
+  ["rate-limit details", /rate limit|tokens per min|requests per min|\bLimit \d/i],
+];
+const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 const OPAQUE_EXEMPT_KEYS = new Set(["model", "type", "object", "name", "kind"]);
 
 const isPlaceholder = (value: string): boolean => value.includes("fixture");
@@ -447,6 +463,10 @@ function walkFixture(value: unknown, path: string, key: string, hits: string[]):
   if (typeof value === "object" && value !== null) {
     for (const [k, v] of Object.entries(value)) {
       const at = path === "" ? k : `${path}.${k}`;
+      if (DANGEROUS_KEYS.has(k)) {
+        hits.push(`dangerous key at ${at}`);
+        continue;
+      }
       if (FORBIDDEN_FIXTURE_KEYS.includes(k) && v !== null && v !== undefined) {
         hits.push(`forbidden key at ${at}`);
         continue;
@@ -456,6 +476,16 @@ function walkFixture(value: unknown, path: string, key: string, hits: string[]):
     return;
   }
   if (typeof value !== "string") return;
+  const named = new Set<string>();
+  for (const [name, pattern] of [...PERSONAL_PATTERNS, ...REFUSED_PATTERNS]) {
+    if (
+      !named.has(name) &&
+      new RegExp(pattern.source, pattern.flags.replace("g", "")).test(value)
+    ) {
+      named.add(name);
+      hits.push(`${name} at ${path}`);
+    }
+  }
   for (const match of value.matchAll(FIXTURE_ID_PATTERN)) {
     if (!isPlaceholder(match[0])) hits.push(`unscrubbed id ${match[0]} at ${path}`);
   }
@@ -494,6 +524,9 @@ export function findFixtureLeaks(text: string): string[] {
     walkFixture(parsed, "", "", hits);
     const record = parsed as { kind?: unknown; error?: { headers?: unknown } };
     if (record.kind === "error") {
+      if ((record.error as { status?: unknown } | undefined)?.status === 429) {
+        hits.push("rate-limit error (429)");
+      }
       const headers = record.error?.headers;
       for (const name of Object.keys(
         typeof headers === "object" && headers !== null ? headers : {},

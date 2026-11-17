@@ -12,6 +12,7 @@ import {
   FIXTURE_ID_PATTERN,
   FORBIDDEN_FIXTURE_KEYS,
   findFixtureLeaks,
+  PERSONAL_PATTERNS,
   redactSecrets,
 } from "../guards.ts";
 import { allowlistHeaders } from "./record.ts";
@@ -27,6 +28,8 @@ const ID_KEYS = new Set([
   "system_fingerprint",
 ]);
 const OPAQUE_KEYS = new Set(["encrypted_content", "signature"]);
+// Keys that would change an object's prototype if anything assigned them.
+const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 const TIME_KEYS = new Set(["created", "created_at", "completed_at"]);
 export const FIXED_TIME = 1_700_000_000;
 export const MAX_STRING = 20_000;
@@ -63,7 +66,8 @@ class Scrubber {
   string(value: string): string {
     if (value.length > MAX_STRING) return `[scrubbed: ${value.length} chars]`;
     // Credentials first: an id pattern (proj-…) can match inside a key and mangle it instead.
-    return redactSecrets(value).replace(FIXTURE_ID_PATTERN, (match) => this.id(match));
+    const ids = redactSecrets(value).replace(FIXTURE_ID_PATTERN, (match) => this.id(match));
+    return PERSONAL_PATTERNS.reduce((out, [, pattern]) => out.replace(pattern, "[scrubbed]"), ids);
   }
 
   value(value: unknown, key: string, parent: Record<string, unknown> | undefined): unknown {
@@ -72,7 +76,7 @@ class Scrubber {
     if (typeof value === "string") {
       // Random padding that normalizes payload sizes; meaningless, and it trips the token guard.
       if (key === "obfuscation") return "";
-      if (ID_KEYS.has(key)) return this.id(value);
+      if (ID_KEYS.has(key) || key.endsWith("_id")) return this.id(value);
       if (OPAQUE_KEYS.has(key)) return this.opaque(value);
       if (key === "data" && parent?.type === "redacted_thinking") return this.opaque(value);
       return this.string(value);
@@ -82,7 +86,9 @@ class Scrubber {
     if (typeof value === "object" && value !== null) {
       const record = value as Record<string, unknown>;
       return Object.fromEntries(
-        Object.entries(record).map(([k, v]) => [k, this.value(v, k, record)]),
+        Object.entries(record)
+          .filter(([k]) => !DANGEROUS_KEYS.has(k))
+          .map(([k, v]) => [k, this.value(v, k, record)]),
       );
     }
     return value;

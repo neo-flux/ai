@@ -451,15 +451,15 @@
     "id": "R65",
     "file": "scripts/recorder/scrub.ts",
     "description": "scrub: credential scan skipped",
-    "find": "    return redactSecrets(value).replace(",
-    "replace": "    return value.replace("
+    "find": "    const ids = redactSecrets(value).replace(",
+    "replace": "    const ids = value.replace("
   },
   {
     "id": "R66",
     "file": "scripts/recorder/scrub.ts",
     "description": "scrub: ids inside strings kept",
-    "find": "    return redactSecrets(value).replace(FIXTURE_ID_PATTERN, (match) => this.id(match));",
-    "replace": "    return redactSecrets(value);"
+    "find": "    const ids = redactSecrets(value).replace(FIXTURE_ID_PATTERN, (match) => this.id(match));",
+    "replace": "    const ids = redactSecrets(value);"
   },
   {
     "id": "R67",
@@ -754,5 +754,89 @@
     "description": "env: anthropic auth token not pinned off",
     "find": "return { apiKey, maxRetries: 0, baseURL: OFFICIAL_BASE_URL.anthropic, authToken: null };",
     "replace": "return { apiKey, maxRetries: 0, baseURL: OFFICIAL_BASE_URL.anthropic };"
+  },
+  {
+    "id": "R109",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: personal data kept",
+    "find": "    return PERSONAL_PATTERNS.reduce((out, [, pattern]) => out.replace(pattern, \"[scrubbed]\"), ids);",
+    "replace": "    return ids;"
+  },
+  {
+    "id": "R110",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: *_id keys not treated as ids",
+    "find": "      if (ID_KEYS.has(key) || key.endsWith(\"_id\")) return this.id(value);",
+    "replace": "      if (ID_KEYS.has(key)) return this.id(value);"
+  },
+  {
+    "id": "R111",
+    "file": "scripts/recorder/scrub.ts",
+    "description": "scrub: prototype-changing keys kept",
+    "find": "          .filter(([k]) => !DANGEROUS_KEYS.has(k))\n",
+    "replace": ""
+  },
+  {
+    "id": "R112",
+    "file": "scripts/guards.ts",
+    "description": "guard: appeal_url not forbidden",
+    "find": "  \"appeal_url\",\n",
+    "replace": ""
+  },
+  {
+    "id": "R113",
+    "file": "scripts/guards.ts",
+    "description": "guard: digit-free org ids missed",
+    "find": "|(?:org|proj)[_-][A-Za-z0-9]{12,}",
+    "replace": ""
+  },
+  {
+    "id": "R114",
+    "file": "scripts/guards.ts",
+    "description": "guard: emails missed",
+    "find": "  [\"email address\", /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/g],\n",
+    "replace": ""
+  },
+  {
+    "id": "R115",
+    "file": "scripts/guards.ts",
+    "description": "guard: masked keys missed",
+    "find": "  [\"masked key\", /\\*{3,}[A-Za-z0-9]{2,8}/g],\n",
+    "replace": ""
+  },
+  {
+    "id": "R116",
+    "file": "scripts/guards.ts",
+    "description": "guard: HTML bodies missed",
+    "find": "  [\"HTML body\", /<!DOCTYPE|<html/i],\n",
+    "replace": ""
+  },
+  {
+    "id": "R117",
+    "file": "scripts/guards.ts",
+    "description": "guard: query-string URLs missed",
+    "find": "  [\"URL with a query string\", /https?:\\/\\/[^\\s\"']+\\?[^\\s\"']+/],\n",
+    "replace": ""
+  },
+  {
+    "id": "R118",
+    "file": "scripts/guards.ts",
+    "description": "guard: rate-limit text missed",
+    "find": "  [\"rate-limit details\", /rate limit|tokens per min|requests per min|\\bLimit \\d/i],\n",
+    "replace": ""
+  },
+  {
+    "id": "R119",
+    "file": "scripts/guards.ts",
+    "description": "guard: 429 errors accepted",
+    "find": "?.status === 429) {",
+    "replace": "?.status === -1) {"
+  },
+  {
+    "id": "R120",
+    "file": "scripts/guards.ts",
+    "description": "guard: prototype-changing keys accepted",
+    "find": "      if (DANGEROUS_KEYS.has(k)) {",
+    "replace": "      if (false) {"
   }
 ]

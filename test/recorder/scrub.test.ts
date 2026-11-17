@@ -350,3 +350,56 @@ describe("scrubFixture: audit follow-ups", () => {
     });
   });
 });
+
+describe("scrubFixture: security review follow-ups", () => {
+  const one = (data: unknown) => scrubFixture(fixture([{ chunks: [data] }])).calls[0]?.chunks[0];
+
+  test("redacts emails, IP addresses and masked key tails", () => {
+    expect(one({ message: "owner@example.com from 203.0.113.57 with sk-proj-****Ab1x" })).toEqual({
+      message: "[scrubbed] from [scrubbed] with sk-proj-[scrubbed]",
+    });
+  });
+
+  test("treats any *_id key as an id", () => {
+    expect(one({ file_id: "file_AbC123", comparison_response_id: "x9y8z7" })).toEqual({
+      file_id: "file_fixture0001",
+      comparison_response_id: "id_fixture0002",
+    });
+  });
+
+  test("replaces digit-free organization ids", () => {
+    expect(one({ message: "organization org-AbCdEfGhIjKlMnOp" })).toEqual({
+      message: "organization org-fixture0001",
+    });
+  });
+
+  test("drops prototype-changing keys", () => {
+    const out = one(
+      JSON.parse('{"a":1,"__proto__":{"polluted":true},"constructor":{"x":1}}'),
+    ) as object;
+    expect(Object.keys(out)).toEqual(["a"]);
+    expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+  });
+
+  test("leaves rate-limit errors for the guard to refuse", () => {
+    const raw = serializeFixture(
+      fixture([
+        {
+          outcome: "threw",
+          error: {
+            phase: "create",
+            afterChunks: 0,
+            error: {
+              name: "RateLimitError",
+              status: 429,
+              message: "429 Rate limit reached for requests per min (RPM): Limit 500",
+              error: null,
+              headers: {},
+            },
+          },
+        },
+      ]),
+    );
+    expect(() => scrubText(raw)).toThrow(/rate-limit/);
+  });
+});
