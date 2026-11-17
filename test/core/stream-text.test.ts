@@ -326,10 +326,10 @@ describe("streamText: adapter misbehaviour", () => {
         ],
       },
     ]);
-    const events = await collect(
-      streamText({ model: fake("m"), messages, price: () => ({ input: 1, output: 1 }) }),
-    );
+    const s = streamText({ model: fake("m"), messages, price: () => ({ input: 1, output: 1 }) });
+    const events = await collect(s);
     expect(events.map((e) => e.type)).toEqual(["usage", "error"]);
+    await expect(s.result).rejects.toMatchObject({ code: "unknown" });
   });
 });
 
@@ -783,5 +783,82 @@ describe("streamText: audit follow-ups", () => {
       // @ts-expect-error structured output is generate-only
       streamText({ model: fakeAdapter([])("m"), messages, output: z.object({}) });
     expect(typeof typeOnly).toBe("function");
+  });
+});
+
+describe("streamText: security review follow-ups", () => {
+  test("concurrent next() calls all settle", async () => {
+    const fake = fakeAdapter([{ events: [text("a"), text("b"), finish], delayMs: 5 }]);
+    const it = streamText({ model: fake("m"), messages })[Symbol.asyncIterator]();
+    const results = await Promise.all([it.next(), it.next(), it.next(), it.next()]);
+    expect(results.map((r) => (r.done ? "done" : r.value.type))).toEqual([
+      "text-delta",
+      "text-delta",
+      "finish",
+      "done",
+    ]);
+  });
+
+  test("an adapter whose cleanup hangs can't outlive a caller abort", async () => {
+    const adapter: Adapter = {
+      provider: "stuck-cleanup",
+      stream: () => {
+        const events: StreamEvent[] = [finish, text("late")];
+        return {
+          [Symbol.asyncIterator]: () => ({
+            next: async () => {
+              const value = events.shift();
+              return value === undefined
+                ? { done: true, value: undefined }
+                : { done: false, value };
+            },
+            return: () => new Promise<IteratorResult<StreamEvent>>(() => {}),
+          }),
+        };
+      },
+    };
+    const controller = new AbortController();
+    const s = streamText({
+      model: defineProvider(adapter)("m"),
+      messages,
+      signal: controller.signal,
+    });
+    setTimeout(() => controller.abort(), 10);
+    const events = await collect(s);
+    expect(events.map((e) => e.type)).toEqual(["error"]);
+  }, 2000);
+
+  test("usage totals beyond safe integers are an unknown error", async () => {
+    const big = Number.MAX_SAFE_INTEGER - 1;
+    const fake = fakeAdapter([
+      {
+        events: [
+          {
+            type: "usage",
+            usage: {
+              inputIncludesCached: false,
+              outputIncludesReasoning: true,
+              inputTokens: big,
+              cachedInputTokens: big,
+            },
+          },
+          finish,
+        ],
+      },
+    ]);
+    await expect(streamText({ model: fake("m"), messages }).result).rejects.toMatchObject({
+      code: "unknown",
+    });
+  });
+
+  test("consumed events are released", async () => {
+    const fake = fakeAdapter([ok("x")]);
+    const s = streamText({ model: fake("m"), messages });
+    const it = s[Symbol.asyncIterator]();
+    await it.next();
+    await s.result;
+    const rest: string[] = [];
+    for (let r = await it.next(); !r.done; r = await it.next()) rest.push(r.value.type);
+    expect(rest).toEqual(["usage", "finish"]);
   });
 });

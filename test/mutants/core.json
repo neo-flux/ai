@@ -462,6 +462,13 @@
     "replace": "} else if (false) {"
   },
   {
+    "id": "C67",
+    "file": "src/run.ts",
+    "description": "waits on a stuck adapter's cleanup",
+    "find": "await close(iterator, step?.settled !== false, signal);",
+    "replace": "await close(iterator, true, signal);"
+  },
+  {
     "id": "C68",
     "file": "src/run.ts",
     "description": "adapter not raced against the signal",
@@ -502,6 +509,13 @@
     "description": "failed outcome left unhandled",
     "find": "    outcome.catch(() => {});\n    this.#started",
     "replace": "    this.#started"
+  },
+  {
+    "id": "C74",
+    "file": "src/stream-text.ts",
+    "description": "eager start",
+    "find": "    this.#buffer = buffer;\n  }",
+    "replace": "    this.#buffer = buffer;\n    this.#start();\n  }"
   },
   {
     "id": "C75",
@@ -609,6 +623,13 @@
     "replace": "toJsonSchema(internal.output, \"draft-2020-12\")"
   },
   {
+    "id": "C91",
+    "file": "src/run.ts",
+    "description": "adapter iterator not closed after an early exit",
+    "find": "const closing = Promise.resolve(iterator.return?.());",
+    "replace": "const closing = Promise.resolve(wait ? undefined : iterator.return?.());"
+  },
+  {
     "id": "C92",
     "file": "src/messages.ts",
     "description": "empty toolName accepted",
@@ -679,6 +700,34 @@
     "replace": "kind: internal.kind, signal: options.signal ?? signal };"
   },
   {
+    "id": "C106",
+    "file": "src/stream-text.ts",
+    "description": "concurrent next() overwrites waiters",
+    "find": "    for (const wake of waiters) wake();",
+    "replace": "    waiters.at(-1)?.();"
+  },
+  {
+    "id": "C107",
+    "file": "src/stream-text.ts",
+    "description": "generate's stream buffers events",
+    "find": "        if (this.#buffer) this.#events.push(step.value);",
+    "replace": "        this.#events.push(step.value);"
+  },
+  {
+    "id": "C108",
+    "file": "src/run.ts",
+    "description": "stuck cleanup not raced against the abort",
+    "find": "await Promise.race([closing, abort.promise]);",
+    "replace": "await closing;"
+  },
+  {
+    "id": "C109",
+    "file": "src/run.ts",
+    "description": "usage overflow not caught",
+    "find": "      failure ??= asAIError(error, provider);\n    }\n    let cost",
+    "replace": "      throw error;\n    }\n    let cost"
+  },
+  {
     "id": "C110",
     "file": "src/usage.ts",
     "description": "usage overflow accepted",
@@ -698,5 +747,12 @@
     "description": "unknown event types echoed in the error",
     "find": "&& KNOWN_TYPES.includes(event.type)\n",
     "replace": "\n"
+  },
+  {
+    "id": "C113",
+    "file": "src/stream-text.ts",
+    "description": "result resolves after a failed held finish",
+    "find": "  if (outcome.error !== undefined) throw outcome.error;\n",
+    "replace": ""
   }
 ]

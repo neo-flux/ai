@@ -36,6 +36,7 @@ export async function toTextResult<T extends Tools>(
   outcome: Outcome,
   tools: T | undefined,
 ): Promise<TextResult<T>> {
+  if (outcome.error !== undefined) throw outcome.error;
   const folded = outcome.folded;
   if (folded === undefined || outcome.modelRef === undefined || folded.finishReason === undefined) {
     throw outcome.error ?? new AIError({ code: "unknown" });
@@ -71,13 +72,16 @@ export class Stream<T extends Tools = Tools> implements TextStream<T> {
   #started: Started | undefined;
   #done = false;
   #failure: { value: unknown } | undefined;
-  #wake: (() => void) | undefined;
+  #waiters: (() => void)[] = [];
+  readonly #buffer: boolean;
   #iterated = false;
   #result: Promise<TextResult<T>> | undefined;
 
-  constructor(options: CallOptions<T>, internal: RunInternal) {
+  /** `buffer: false` drops events instead of keeping them for an iterator (generate's case). */
+  constructor(options: CallOptions<T>, internal: RunInternal, buffer = true) {
     this.#options = options;
     this.#internal = internal;
+    this.#buffer = buffer;
   }
 
   /** The engine's outcome. Starts the request on first access. */
@@ -110,7 +114,7 @@ export class Stream<T extends Tools = Tools> implements TextStream<T> {
       while (true) {
         const step = await engine.next();
         if (step.done === true) return step.value;
-        this.#events.push(step.value);
+        if (this.#buffer) this.#events.push(step.value);
         this.#notify();
       }
     } catch (error) {
@@ -123,25 +127,22 @@ export class Stream<T extends Tools = Tools> implements TextStream<T> {
   }
 
   #notify(): void {
-    const wake = this.#wake;
-    this.#wake = undefined;
-    wake?.();
+    const waiters = this.#waiters;
+    this.#waiters = [];
+    for (const wake of waiters) wake();
   }
 
   [Symbol.asyncIterator](): AsyncIterator<StreamEvent> {
     if (this.#iterated) throw new TypeError("a streamText result can only be iterated once");
     this.#iterated = true;
-    let index = 0;
     let closed = false;
     let thrown = false;
     const next = async (): Promise<IteratorResult<StreamEvent>> => {
       this.#start();
       while (!closed) {
-        const event = this.#events[index];
-        if (event !== undefined) {
-          index++;
-          return { done: false, value: event };
-        }
+        // Consumed events are released; there is only ever one iterator.
+        const event = this.#events.shift();
+        if (event !== undefined) return { done: false, value: event };
         if (this.#done) {
           if (this.#failure !== undefined && !thrown) {
             thrown = true;
@@ -150,7 +151,7 @@ export class Stream<T extends Tools = Tools> implements TextStream<T> {
           break;
         }
         await new Promise<void>((resolve) => {
-          this.#wake = resolve;
+          this.#waiters.push(resolve);
         });
       }
       return { done: true, value: undefined };

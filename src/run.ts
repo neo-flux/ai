@@ -113,11 +113,37 @@ function nextOrAbort(iterator: AsyncIterator<StreamEvent>, signal: AbortSignal):
   return step;
 }
 
-async function close(iterator: AsyncIterator<StreamEvent>, wait: boolean): Promise<void> {
+// Resolves when the signal aborts. The listener is removed by `done`.
+function aborted(signal: AbortSignal): { promise: Promise<void>; done: () => void } {
+  let done = (): void => {};
+  const promise = new Promise<void>((resolve) => {
+    if (signal.aborted) {
+      resolve();
+      return;
+    }
+    const onAbort = () => resolve();
+    signal.addEventListener("abort", onAbort, { once: true });
+    done = () => signal.removeEventListener("abort", onAbort);
+  });
+  return { promise, done };
+}
+
+async function close(
+  iterator: AsyncIterator<StreamEvent>,
+  wait: boolean,
+  signal: AbortSignal,
+): Promise<void> {
   try {
-    const closing = iterator.return?.();
-    if (wait) await closing;
-    else closing?.catch(() => {});
+    const closing = Promise.resolve(iterator.return?.());
+    closing.catch(() => {});
+    if (!wait) return;
+    // Even a settled adapter can hang in its own cleanup; an abort still ends the call.
+    const abort = aborted(signal);
+    try {
+      await Promise.race([closing, abort.promise]);
+    } finally {
+      abort.done();
+    }
   } catch {
     // An adapter failing to clean up must not mask the outcome.
   }
@@ -239,11 +265,17 @@ export async function* execute(
           : toAIError(error, { provider, classify: modelRef.adapter.classifyError, signal });
     } finally {
       // Wait for cleanup unless the adapter is stuck in a call that ignored the abort.
-      if (!exhausted && iterator !== undefined) await close(iterator, step?.settled !== false);
+      if (!exhausted && iterator !== undefined)
+        await close(iterator, step?.settled !== false, signal);
     }
 
     const folded = fold.result();
-    const usage = normalizeUsage(fold.usage);
+    let usage = normalizeUsage(undefined);
+    try {
+      usage = normalizeUsage(fold.usage);
+    } catch (error) {
+      failure ??= asAIError(error, provider);
+    }
     let cost: number | undefined;
     if (fold.usage !== undefined) {
       const price = options.price?.(modelRef);
