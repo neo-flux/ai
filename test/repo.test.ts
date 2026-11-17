@@ -122,10 +122,11 @@ describe("package.json", () => {
 
 describe("repository", () => {
   test("no file names a banned term", () => {
-    const files = git("ls-files", "-z", "--cached", "--others", "--exclude-standard")
-      .filter((f) => f !== BANNED_TERMS_FILE)
-      .filter((f) => existsSync(join(root, f)));
-    expect(files.length).toBeGreaterThan(0);
+    const all = git("ls-files", "-z", "--cached", "--others", "--exclude-standard").filter((f) =>
+      existsSync(join(root, f)),
+    );
+    const files = all.filter((f) => f !== BANNED_TERMS_FILE);
+    expect(all.filter((f) => !files.includes(f))).toEqual([BANNED_TERMS_FILE]);
     for (const file of files) {
       const found = findBannedTerms(
         `${file}\n${readFileSync(join(root, file), "utf8")}`,

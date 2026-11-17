@@ -1,0 +1,177 @@
+[
+  {
+    "id": "M1",
+    "file": "scripts/guards.ts",
+    "description": "bareImports never flags",
+    "find": ".filter((s) => !isRelative(s));",
+    "replace": ".filter((s) => !isRelative(s) && false);"
+  },
+  {
+    "id": "M2",
+    "file": "scripts/guards.ts",
+    "description": "relative check accepts any leading dot",
+    "find": "/^\\.\\.?\\//.test(specifier)",
+    "replace": "/^\\./.test(specifier)"
+  },
+  {
+    "id": "M3",
+    "file": "scripts/guards.ts",
+    "description": "dynamic import() not scanned",
+    "find": "  { pattern: /\\bimport\\s*\\(\\s*\"#(\\d+)\"\\s*\\)/g, statement: false },\n",
+    "replace": ""
+  },
+  {
+    "id": "M4",
+    "file": "scripts/guards.ts",
+    "description": ".d.ts peer allow-list ignored",
+    "find": "if (!allowedPeers.includes(specifier)) violations.push",
+    "replace": "if (false) violations.push"
+  },
+  {
+    "id": "M5",
+    "file": "scripts/guards.ts",
+    "description": "Bun removed from runtime globals",
+    "find": "  \"Bun\",\n  \"Deno\",",
+    "replace": "  \"Deno\","
+  },
+  {
+    "id": "M6",
+    "file": "scripts/guards.ts",
+    "description": "type-only imports of any package allowed",
+    "find": "!(s.typeOnly && typeOnlyPeers.includes(s.specifier))",
+    "replace": "!s.typeOnly"
+  },
+  {
+    "id": "M7",
+    "file": "scripts/guards.ts",
+    "description": "value imports of peers allowed",
+    "find": "!(s.typeOnly && typeOnlyPeers.includes(s.specifier))",
+    "replace": "!typeOnlyPeers.includes(s.specifier)"
+  },
+  {
+    "id": "M8",
+    "file": "scripts/guards.ts",
+    "description": "globals: lookbehind removed (matches properties and suffixes)",
+    "find": "`(?<![\\\\w$.])(${names})\\\\b`",
+    "replace": "`(${names})\\\\b`"
+  },
+  {
+    "id": "M9",
+    "file": "scripts/guards.ts",
+    "description": "globals: trailing word boundary removed",
+    "find": "`(?<![\\\\w$.])(${names})\\\\b`",
+    "replace": "`(?<![\\\\w$.])(${names})`"
+  },
+  {
+    "id": "M10",
+    "file": "scripts/guards.ts",
+    "description": "globals: object-key exemption applies everywhere",
+    "find": "if (!objectKey) found.push",
+    "replace": "if (objectKey || true) found.push"
+  },
+  {
+    "id": "M11",
+    "file": "scripts/guards.ts",
+    "description": "globals: globalThis.X not checked",
+    "find": "`\\\\bglobalThis\\\\s*\\\\.\\\\s*(${names})\\\\b`",
+    "replace": "`\\\\bglobalThisNever\\\\s*\\\\.\\\\s*(${names})\\\\b`"
+  },
+  {
+    "id": "M12",
+    "file": "scripts/guards.ts",
+    "description": "lexer: template expressions not scanned",
+    "find": "out += readCode(true);",
+    "replace": "readCode(true);"
+  },
+  {
+    "id": "M13",
+    "file": "scripts/guards.ts",
+    "description": "lexer: regex literals scanned as code",
+    "find": "if (source[j] === \"/\") {",
+    "replace": "if (false) {"
+  },
+  {
+    "id": "M14",
+    "file": "scripts/guards.ts",
+    "description": "d.ts graph: relative edges not followed",
+    "find": "queue.push(target);",
+    "replace": ""
+  },
+  {
+    "id": "M15",
+    "file": "scripts/guards.ts",
+    "description": "manifest: dependencies not checked",
+    "find": "    \"dependencies\",\n    \"optionalDependencies\",",
+    "replace": "    \"optionalDependencies\","
+  },
+  {
+    "id": "M16",
+    "file": "scripts/guards.ts",
+    "description": "manifest: exact-pin accepts ^ and ~",
+    "find": "const EXACT_VERSION = /^\\d",
+    "replace": "const EXACT_VERSION = /^[\\^~]?\\d"
+  },
+  {
+    "id": "M17",
+    "file": "scripts/guards.ts",
+    "description": "manifest: postinstall not a lifecycle script",
+    "find": "  \"postinstall\",\n  \"preuninstall\",",
+    "replace": "  \"preuninstall\","
+  },
+  {
+    "id": "M18",
+    "file": "scripts/guards.ts",
+    "description": "manifest: peer optional flag not checked",
+    "find": "if (record(meta[name]).optional !== true)",
+    "replace": "if (false)"
+  },
+  {
+    "id": "M19",
+    "file": "scripts/guards.ts",
+    "description": "manifest: types-first condition not checked",
+    "find": "if (Object.keys(entry)[0] !== \"types\")",
+    "replace": "if (false)"
+  },
+  {
+    "id": "M20",
+    "file": "scripts/guards.ts",
+    "description": "manifest: non-empty trustedDependencies accepted",
+    "find": " || trusted.length > 0",
+    "replace": ""
+  },
+  {
+    "id": "M21",
+    "file": "scripts/guards.ts",
+    "description": "banned terms: case-sensitive",
+    "find": "const lower = text.toLowerCase();",
+    "replace": "const lower = text;"
+  },
+  {
+    "id": "M22",
+    "file": "test/repo.test.ts",
+    "description": "banned terms: exemption broadened to all tests",
+    "find": "const files = all.filter((f) => f !== BANNED_TERMS_FILE);",
+    "replace": "const files = all.filter((f) => !f.startsWith(\"test/\"));"
+  },
+  {
+    "id": "M23",
+    "file": "scripts/guards.ts",
+    "description": "workflows: only first line compared",
+    "find": "    .filter((line) => !/^\\s*runs-on:/.test(line))",
+    "replace": "    .slice(0, 1)\n    .filter((line) => !/^\\s*runs-on:/.test(line))"
+  },
+  {
+    "id": "M24",
+    "file": "scripts/guards.ts",
+    "description": "workflows: runs-on not normalized",
+    "find": "    .filter((line) => !/^\\s*runs-on:/.test(line))\n",
+    "replace": ""
+  },
+  {
+    "id": "M25",
+    "file": "scripts/mutate.ts",
+    "description": "applyMutant accepts multiple matches",
+    "find": "if (count !== 1)",
+    "replace": "if (count < 1)"
+  }
+]
