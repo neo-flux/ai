@@ -614,5 +614,54 @@
     "description": "cli: non-OK models list accepted",
     "find": "    if (!response.ok) throw",
     "replace": "    if (false) throw"
+  },
+  {
+    "id": "R89",
+    "file": "scripts/recorder/cases.ts",
+    "description": "chat tool call: empty continuation id overwrites",
+    "find": "if (typeof tc.id === \"string\" && tc.id !== \"\") target.id",
+    "replace": "if (typeof tc.id === \"string\") target.id"
+  },
+  {
+    "id": "R90",
+    "file": "scripts/recorder/cases.ts",
+    "description": "Anthropic tool round trip turn 2 drops the tools",
+    "find": "        : call(anthropicTurn2(model, PROMPTS.tool, previous, { tools: [ANTHROPIC_TOOL] })),",
+    "replace": "        : call(anthropicTurn2(model, PROMPTS.tool, previous, {})),"
+  },
+  {
+    "id": "R91",
+    "file": "scripts/recorder/cases.ts",
+    "description": "chat tool round trip turn 2 drops the tools",
+    "find": "        : call(turn2(model, PROMPTS.tool, previous, false, { tools: [CHAT_TOOL] })),",
+    "replace": "        : call(turn2(model, PROMPTS.tool, previous, false, {})),"
+  },
+  {
+    "id": "R92",
+    "file": "scripts/recorder/cases.ts",
+    "description": "chat tool call: name appended on every chunk",
+    "find": "      if (typeof fn.name === \"string\" && fn.name !== \"\" && target.function.name === \"\") {\n          target.function.name = fn.name;",
+    "replace": "      if (typeof fn.name === \"string\") {\n          target.function.name += fn.name;"
+  },
+  {
+    "id": "R93",
+    "file": "scripts/recorder/cases.ts",
+    "description": "empty Anthropic text blocks kept",
+    "find": " && !(b.type === \"text\" && (b.text ?? \"\") === \"\")",
+    "replace": ""
+  },
+  {
+    "id": "R94",
+    "file": "scripts/recorder/cases.ts",
+    "description": "OpenAI obfuscation padding left on",
+    "find": "    stream_options: { include_obfuscation: false },\n",
+    "replace": ""
+  },
+  {
+    "id": "R95",
+    "file": "scripts/recorder/cases.ts",
+    "description": "Anthropic reasoning round trip forces the tool",
+    "find": "        tool_choice: { type: \"auto\" as const },",
+    "replace": "        tool_choice: { type: \"tool\" as const, name: WEATHER.name },"
   }
 ]

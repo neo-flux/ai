@@ -121,6 +121,8 @@ const responses = (model: string, prompt: string, extra: Partial<ResponseParams>
     input: [{ role: "user", content: prompt }],
     stream: true,
     store: false,
+    // Random padding on every delta; off, so fixtures hold only what adapters read.
+    stream_options: { include_obfuscation: false },
     ...extra,
   }) satisfies ResponseParams;
 
@@ -271,7 +273,11 @@ export function anthropicBlocks(chunks: readonly unknown[]): Anthropic.ContentBl
         block.input = JSON.parse(json[index] ?? "{}");
     }
   }
-  return blocks.filter(Boolean).map((block) => {
+  // An empty text block can't be sent back, so it is dropped.
+  const kept = blocks.filter(
+    (b) => b !== undefined && !(b.type === "text" && (b.text ?? "") === ""),
+  );
+  return kept.map((block) => {
     switch (block.type) {
       case "text":
         return { type: "text", text: String(block.text) };
@@ -397,8 +403,11 @@ export function chatAssistant(chunks: readonly unknown[], withReasoning: boolean
         const fn = record(tc.function);
         calls[index] ??= { id: "", type: "function", function: { name: "", arguments: "" } };
         const target = calls[index];
-        if (typeof tc.id === "string") target.id = tc.id;
-        if (typeof fn.name === "string") target.function.name += fn.name;
+        // Continuation chunks may repeat the id and name, or send them as "": empty values never win.
+        if (typeof tc.id === "string" && tc.id !== "") target.id = tc.id;
+        if (typeof fn.name === "string" && fn.name !== "" && target.function.name === "") {
+          target.function.name = fn.name;
+        }
         if (typeof fn.arguments === "string") target.function.arguments += fn.arguments;
       }
     }

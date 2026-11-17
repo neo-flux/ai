@@ -390,3 +390,173 @@ describe("turn 2 builders", () => {
     expect(() => build("deepseek", "tool-round-trip", 1, [recorded([])])).toThrow(/no tool call/);
   });
 });
+
+describe("case builders: audit follow-ups", () => {
+  const chunk = (delta: unknown) => ({ id: "c1", choices: [{ index: 0, delta }] });
+
+  test("Qwen-shaped continuations with empty id and name keep the first id and name", () => {
+    const qwen = recorded([
+      chunk({
+        tool_calls: [
+          {
+            index: 0,
+            id: "call_1",
+            type: "function",
+            function: { name: "get_weather", arguments: "" },
+          },
+        ],
+      }),
+      chunk({
+        tool_calls: [
+          { index: 0, id: "", type: "function", function: { name: "", arguments: '{"city":' } },
+        ],
+      }),
+      chunk({
+        tool_calls: [
+          { index: 0, id: "", type: "function", function: { name: "", arguments: '"Lahore"}' } },
+        ],
+      }),
+    ]);
+    expect(chatAssistant(qwen.chunks, false).tool_calls).toEqual([
+      {
+        id: "call_1",
+        type: "function",
+        function: { name: "get_weather", arguments: '{"city":"Lahore"}' },
+      },
+    ]);
+  });
+
+  test("a provider repeating the full name on each chunk doesn't duplicate it", () => {
+    const repeated = recorded([
+      chunk({
+        tool_calls: [
+          { index: 0, id: "call_1", function: { name: "get_weather", arguments: "{}" } },
+        ],
+      }),
+      chunk({ tool_calls: [{ index: 0, id: "call_1", function: { name: "get_weather" } }] }),
+    ]);
+    expect(chatAssistant(repeated.chunks, false).tool_calls).toEqual([
+      { id: "call_1", type: "function", function: { name: "get_weather", arguments: "{}" } },
+    ]);
+  });
+
+  test("anthropicBlocks drops text blocks that stayed empty", () => {
+    expect(
+      anthropicBlocks([
+        { type: "content_block_start", index: 0, content_block: { type: "text", text: "" } },
+        { type: "content_block_stop", index: 0 },
+        {
+          type: "content_block_start",
+          index: 1,
+          content_block: { type: "tool_use", id: "toolu_1", name: "get_weather", input: {} },
+        },
+        { type: "content_block_stop", index: 1 },
+      ]),
+    ).toEqual([{ type: "tool_use", id: "toolu_1", name: "get_weather", input: {} }]);
+  });
+
+  const toolTurn1: Record<Provider, FixtureCall> = {
+    openai: recorded([
+      {
+        type: "response.completed",
+        response: {
+          output: [
+            {
+              type: "message",
+              id: "msg_1",
+              role: "assistant",
+              content: [{ type: "output_text", text: "Checking." }],
+            },
+            {
+              type: "function_call",
+              id: "fc_1",
+              call_id: "call_1",
+              name: "get_weather",
+              arguments: "{}",
+            },
+          ],
+        },
+      },
+    ]),
+    anthropic: recorded([
+      {
+        type: "content_block_start",
+        index: 0,
+        content_block: { type: "tool_use", id: "toolu_1", name: "get_weather", input: {} },
+      },
+      { type: "content_block_stop", index: 0 },
+    ]),
+    deepseek: recorded([
+      chunk({
+        tool_calls: [
+          {
+            index: 0,
+            id: "call_1",
+            type: "function",
+            function: { name: "get_weather", arguments: "{}" },
+          },
+        ],
+      }),
+    ]),
+    qwen: recorded([
+      chunk({
+        tool_calls: [
+          {
+            index: 0,
+            id: "call_1",
+            type: "function",
+            function: { name: "get_weather", arguments: "{}" },
+          },
+        ],
+      }),
+    ]),
+  };
+
+  test("turn 2 of every two-turn case keeps the tools and doesn't force one", () => {
+    for (const provider of PROVIDERS) {
+      for (const id of ["tool-round-trip", "reasoning-tool-round-trip"]) {
+        const p = params(build(provider, id, 1, [toolTurn1[provider]]));
+        expect({
+          provider,
+          id,
+          tools: Array.isArray(p.tools) && (p.tools as unknown[]).length === 1,
+        }).toEqual({
+          provider,
+          id,
+          tools: true,
+        });
+        const choice = p.tool_choice as { type?: string } | string | undefined;
+        const forced =
+          typeof choice === "object" && (choice.type === "tool" || choice.type === "function");
+        expect({ provider, id, forced }).toEqual({ provider, id, forced: false });
+      }
+    }
+  });
+
+  test("Anthropic reasoning with tools leaves the choice to the model on both turns", () => {
+    expect(params(build("anthropic", "reasoning-tool-round-trip")).tool_choice).toEqual({
+      type: "auto",
+    });
+    expect(
+      params(build("anthropic", "reasoning-tool-round-trip", 1, [toolTurn1.anthropic])).tool_choice,
+    ).toEqual({
+      type: "auto",
+    });
+  });
+
+  test("OpenAI reasoning round trip passes message items back too", () => {
+    const input = params(build("openai", "reasoning-tool-round-trip", 1, [toolTurn1.openai]))
+      .input as Record<string, unknown>[];
+    expect(input.some((item) => item.type === "message" && item.id === "msg_1")).toBe(true);
+  });
+
+  test("OpenAI requests turn off stream obfuscation padding", () => {
+    for (const c of casesFor("openai")) {
+      const p = params(c.build({ turn: 0, model: "m", previous: [] }));
+      expect({ id: c.id, so: p.stream_options }).toEqual({
+        id: c.id,
+        so: { include_obfuscation: false },
+      });
+    }
+  });
+});
