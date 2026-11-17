@@ -1,0 +1,44 @@
+[
+  {
+    "id": "R1",
+    "file": "src/testing/fixture.ts",
+    "description": "missing end accepted",
+    "find": "  if (open !== undefined) throw new TypeError(`call ${open.index} has no end`);\n",
+    "replace": ""
+  },
+  {
+    "id": "R2",
+    "file": "src/testing/fixture.ts",
+    "description": "afterChunks mismatch accepted",
+    "find": "      if (value.afterChunks !== open.chunks.length) {",
+    "replace": "      if (false) {"
+  },
+  {
+    "id": "R3",
+    "file": "src/testing/fixture.ts",
+    "description": "unknown format version accepted",
+    "find": "  if (line.format !== 1) throw",
+    "replace": "  if (false) throw"
+  },
+  {
+    "id": "R4",
+    "file": "src/testing/fixture.ts",
+    "description": "threw without an error accepted",
+    "find": "      if (open.outcome === \"threw\" && open.error === undefined) {",
+    "replace": "      if (false) {"
+  },
+  {
+    "id": "R5",
+    "file": "src/testing/fixture.ts",
+    "description": "call index order not checked",
+    "find": "      if (value.index !== calls.length) throw",
+    "replace": "      if (false) throw"
+  },
+  {
+    "id": "R6",
+    "file": "src/testing/fixture.ts",
+    "description": "create error after chunks accepted",
+    "find": "      if (value.phase === \"create\" && open.chunks.length > 0) {",
+    "replace": "      if (false) {"
+  }
+]
