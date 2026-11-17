@@ -170,6 +170,7 @@ describe("generate: structured output", () => {
     expect(e.rawText).toBe('{"name":1}');
     expect(e.issues?.length).toBeGreaterThan(0);
     expect(e.message).not.toContain("name");
+    expect(e.provider).toBe("fake");
     expect(fake.calls).toHaveLength(2);
   });
 
@@ -239,5 +240,64 @@ describe("parseOutput and repairPrompt", () => {
       "Your previous response was not valid JSON matching the required schema. Problems:\n" +
         "- a.0.b: bad\n- top\nReply with only the corrected JSON.",
     );
+  });
+});
+
+describe("generate: audit follow-ups", () => {
+  test("the provider's JSON Schema target reaches output conversion", async () => {
+    const targets: string[] = [];
+    const schema = {
+      "~standard": {
+        version: 1 as const,
+        vendor: "spy",
+        jsonSchema: {
+          input: (o: { target: string }) => {
+            targets.push(o.target);
+            return { type: "object" };
+          },
+          output: () => ({}),
+        },
+      },
+    };
+    const fake = fakeAdapter([answer("{}")], { jsonSchemaTarget: "draft-07" });
+    await generate({ model: fake("m"), messages, output: schema });
+    expect(targets).toEqual(["draft-07"]);
+  });
+
+  test("tool calls in a repaired answer are validated against the tools", async () => {
+    const tools = { note: { schema: z.object({ text: z.string() }) } };
+    const fake = fakeAdapter([
+      answer("bad"),
+      {
+        events: [
+          { type: "text-delta", text: '{"name":"A","population":1}' },
+          { type: "tool-call-start", id: "c1", name: "note" },
+          { type: "tool-call-delta", id: "c1", inputDelta: '{"text":"hi"}' },
+          { type: "tool-call-end", id: "c1" },
+          { type: "finish", reason: "tool-calls" },
+        ],
+      },
+    ]);
+    const r = await generate({ model: fake("m"), messages, tools, output: city });
+    expect(r.toolCalls).toEqual([
+      { id: "c1", name: "note", input: { text: "hi" }, rawInput: '{"text":"hi"}' },
+    ]);
+  });
+
+  test("generate infers typed tool calls from tools", async () => {
+    const tools = {
+      weather: { schema: z.object({ city: z.string() }) },
+      count: { schema: z.object({ n: z.number() }) },
+    };
+    const fake = fakeAdapter([answer("x")]);
+    const r = await generate({ model: fake("m"), messages, tools });
+    const call = r.toolCalls[0];
+    if (call !== undefined && call.error === undefined && call.name === "weather") {
+      expectTypeOf(call.input).toEqualTypeOf<{ city: string }>();
+    }
+    if (call !== undefined && call.error === undefined && call.name === "count") {
+      expectTypeOf(call.input).toEqualTypeOf<{ n: number }>();
+    }
+    expect(r.toolCalls).toEqual([]);
   });
 });

@@ -267,6 +267,7 @@ describe("streamText: fallback", () => {
     ]);
     const b = fakeAdapter([ok("from b")]);
     expect((await streamText({ model: [a("a"), b("b")], messages }).result).text).toBe("from b");
+    expect(a.closedEarly).toBe(1);
   });
 
   test("uses the adapter's error classification", async () => {
@@ -294,6 +295,7 @@ describe("streamText: adapter misbehaviour", () => {
     expect(error.code).toBe("unknown");
     expect(error.retryable).toBe(false);
     expect((error.cause as { rule: string }).rule).toBe("O1");
+    expect(fake.closedEarly).toBe(1);
   });
 
   test("a stream that just stops is an unknown error", async () => {
@@ -666,6 +668,18 @@ describe("streamText: lifecycle", () => {
     try {
       const fake = fakeAdapter([{ throwBefore: badRequest }]);
       await collect(streamText({ model: fake("m"), messages }));
+      // A hook error rejects the engine's outcome; result is never touched.
+      const thrown = new Error("hook");
+      const s = streamText({
+        model: fakeAdapter([ok("x")])("m"),
+        messages,
+        hooks: {
+          onUsage: () => {
+            throw thrown;
+          },
+        },
+      });
+      await expect(collect(s)).rejects.toBe(thrown);
       await tick();
       await tick();
     } finally {
@@ -680,5 +694,94 @@ describe("streamText: lifecycle", () => {
     const [event] = await collect(s);
     const error = await s.result.catch((e: unknown) => e);
     expect((event as { error: unknown }).error).toBe(error);
+  });
+});
+
+describe("streamText: audit follow-ups", () => {
+  test("breaking out aborts the adapter even when the caller passed a signal", async () => {
+    const caller = new AbortController();
+    const fake = fakeAdapter([{ events: [text("a"), text("b"), finish], delayMs: 20 }]);
+    const s = streamText({ model: fake("m"), messages, signal: caller.signal });
+    for await (const _ of s) break;
+    expect(fake.calls[0]?.signal.aborted).toBe(true);
+    expect(caller.signal.aborted).toBe(false);
+  });
+
+  test("price is asked about the model that answered", async () => {
+    const a = fakeAdapter([{ throwBefore: rateLimited }]);
+    const b = fakeAdapter([{ events: [usage(1_000_000, 1_000_000), finish] }]);
+    const r = await streamText({
+      model: [a("a"), b("b")],
+      messages,
+      price: (ref) => (ref.id === "b" ? { input: 1, output: 2 } : { input: 100, output: 100 }),
+    }).result;
+    expect(r.cost).toBe(3);
+  });
+
+  test("the provider's JSON Schema target reaches tool conversion", async () => {
+    const targets: string[] = [];
+    const schema = {
+      "~standard": {
+        version: 1 as const,
+        vendor: "spy",
+        jsonSchema: {
+          input: (o: { target: string }) => {
+            targets.push(o.target);
+            return { type: "object" };
+          },
+          output: () => ({}),
+        },
+      },
+    };
+    const fake = fakeAdapter([ok("x")], { jsonSchemaTarget: "draft-07" });
+    await streamText({ model: fake("m"), messages, tools: { t: { schema } } }).result;
+    expect(targets).toEqual(["draft-07"]);
+  });
+
+  test("next() after return() or after a rejection reports done", async () => {
+    const fake = fakeAdapter([{ events: [text("a"), text("b"), finish], delayMs: 5 }]);
+    const it = streamText({ model: fake("m"), messages })[Symbol.asyncIterator]();
+    await it.next();
+    await it.return?.();
+    expect(await it.next()).toEqual({ done: true, value: undefined });
+
+    const thrown = new Error("hook");
+    const failing = streamText({
+      model: fakeAdapter([ok("x")])("m"),
+      messages,
+      hooks: {
+        beforeRequest: () => {
+          throw thrown;
+        },
+      },
+    })[Symbol.asyncIterator]();
+    await expect(failing.next()).rejects.toBe(thrown);
+    expect(await failing.next()).toEqual({ done: true, value: undefined });
+  });
+
+  test("hooks get the same signal the adapter sees", async () => {
+    const fake = fakeAdapter([ok("x")]);
+    const signals: AbortSignal[] = [];
+    await streamText({
+      model: fake("m"),
+      messages,
+      signal: new AbortController().signal,
+      hooks: {
+        resolveModel: (models, ctx) => {
+          signals.push(ctx.signal);
+          return models;
+        },
+        beforeRequest: (_r, ctx) => void signals.push(ctx.signal),
+      },
+    }).result;
+    expect(signals).toHaveLength(2);
+    for (const signal of signals) expect(signal).toBe(fake.calls[0]?.signal as AbortSignal);
+  });
+
+  test("output is a type error on streamText", () => {
+    const typeOnly = () =>
+      // @ts-expect-error structured output is generate-only
+      streamText({ model: fakeAdapter([])("m"), messages, output: z.object({}) });
+    expect(typeof typeOnly).toBe("function");
   });
 });

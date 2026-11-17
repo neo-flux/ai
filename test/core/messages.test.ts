@@ -96,6 +96,19 @@ describe("validateMessages", () => {
     rejects([{ role: "user", content: [{ type: "file", data: "x", mediaType: "a/b" }] }], /bytes/);
   });
 
+  test("tool messages need a toolName, images a non-empty mediaType, assistant text a string", () => {
+    rejects(
+      [assistantCall, { role: "tool", toolCallId: "call_1", toolName: "", content: "x" }],
+      /toolName/,
+    );
+    rejects(
+      [{ role: "user", content: [{ type: "image", data: bytes, mediaType: "" }] }],
+      /mediaType/,
+    );
+    rejects([{ role: "assistant", content: [{ type: "text", text: 1 }] }], /text/);
+    rejects([{ role: "assistant", content: [{ type: "reasoning" }] }], /text/);
+  });
+
   test("tool calls need an id and a name", () => {
     rejects(
       [{ role: "assistant", content: [{ type: "tool-call", id: "", name: "n", input: {} }] }],

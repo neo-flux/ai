@@ -91,6 +91,7 @@ describe("violations", () => {
     violates([{ type: "finish", reason: "done" }], "O0", 0);
     violates([{ type: "error", error: new Error("x") }], "O0", 0);
     violates([null], "O0", 0);
+    violates([start("a"), { type: "tool-call-end", id: "" }], "O0", 1);
   });
 
   test("O1 exactly one terminal event, nothing after it", () => {

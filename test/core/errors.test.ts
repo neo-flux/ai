@@ -286,8 +286,9 @@ describe("toAIError", () => {
   });
 
   test("a caller timeout signal is a non-retryable timeout", async () => {
-    const signal = AbortSignal.timeout(1);
-    await new Promise((r) => setTimeout(r, 20));
+    const controller = new AbortController();
+    controller.abort(new DOMException("timed out", "TimeoutError"));
+    const signal = controller.signal;
     const err = toAIError({ name: "AbortError" }, { provider, signal });
     expect(err.code).toBe("timeout");
     expect(err.retryable).toBe(false);
