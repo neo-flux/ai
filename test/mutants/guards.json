@@ -362,5 +362,19 @@
     "description": "secrets: bearer matches any word",
     "find": "/\\bBearer\\s+[A-Za-z0-9._~+/-]{20,}/",
     "replace": "/\\bBearer\\s+\\w+/"
+  },
+  {
+    "id": "M53",
+    "file": "scripts/guards.ts",
+    "description": "d.ts graph: source .ts specifiers not mapped to .d.ts",
+    "find": "  if (target.endsWith(\".ts\")) return `${target.slice(0, -3)}.d.ts`;\n",
+    "replace": ""
+  },
+  {
+    "id": "M54",
+    "file": "scripts/guards.ts",
+    "description": "d.ts graph: source .mts specifiers not mapped to .d.mts",
+    "find": "  if (target.endsWith(\".mts\")) return `${target.slice(0, -4)}.d.mts`;\n",
+    "replace": ""
   }
 ]

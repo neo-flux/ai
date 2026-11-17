@@ -225,6 +225,9 @@ const declarationPath = (from: string, specifier: string): string => {
   if (target.endsWith(".d.ts")) return target;
   if (target.endsWith(".js")) return `${target.slice(0, -3)}.d.ts`;
   if (target.endsWith(".mjs")) return `${target.slice(0, -4)}.d.mts`;
+  // Declaration emit keeps source .ts specifiers, which TypeScript resolves to the .d.ts.
+  if (target.endsWith(".ts")) return `${target.slice(0, -3)}.d.ts`;
+  if (target.endsWith(".mts")) return `${target.slice(0, -4)}.d.mts`;
   return `${target}.d.ts`;
 };
 

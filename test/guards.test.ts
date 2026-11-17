@@ -284,6 +284,9 @@ describe("checkDtsGraph", () => {
     "dist/esm.d.ts": 'export * from "./x.mjs";',
     "dist/x.d.mts": 'import type { Z } from "zod";\nexport declare const z: Z;',
     "dist/direct.d.ts": 'export * from "./types/msg.d.ts";',
+    // tsc keeps source .ts specifiers in declaration files under rewriteRelativeImportExtensions.
+    "dist/src-ext.d.ts": 'export * from "./deep.ts";',
+    "dist/src-mts.d.ts": 'export * from "./x.mts";',
   };
   const read = (path: string): string | undefined => files[path];
 
@@ -315,6 +318,15 @@ describe("checkDtsGraph", () => {
 
   test("follows .mjs imports to .d.mts", () => {
     expect(checkDtsGraph("dist/esm.d.ts", read, [])).toEqual([
+      { file: "dist/x.d.mts", specifier: "zod" },
+    ]);
+  });
+
+  test("follows source .ts and .mts specifiers to their declarations", () => {
+    expect(checkDtsGraph("dist/src-ext.d.ts", read, [])).toEqual([
+      { file: "dist/deep.d.ts", specifier: "@anthropic-ai/sdk" },
+    ]);
+    expect(checkDtsGraph("dist/src-mts.d.ts", read, [])).toEqual([
       { file: "dist/x.d.mts", specifier: "zod" },
     ]);
   });
