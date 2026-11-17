@@ -7,6 +7,9 @@ coverage/
 .env
 .env.*
 !.env.example
+.npmrc
+*.pem
+*.key
 
 # raw recordings before scrubbing, never committed
 fixtures/.raw/
