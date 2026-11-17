@@ -239,15 +239,20 @@ describe("streamText: fallback", () => {
 
   test("an abort between attempts stops the chain before the next call", async () => {
     const controller = new AbortController();
+    const prepared: string[] = [];
     const a = fakeAdapter([{ throwBefore: rateLimited }]);
     const b = fakeAdapter([ok("b")]);
     const s = streamText({
       model: [a("a"), b("b")],
       messages,
       signal: controller.signal,
-      hooks: { onError: () => controller.abort() },
+      hooks: {
+        onError: () => controller.abort(),
+        beforeRequest: (_r, ctx) => void prepared.push(ctx.modelRef.id),
+      },
     });
     await expect(s.result).rejects.toMatchObject({ code: "aborted" });
+    expect(prepared).toEqual(["a"]);
     expect(b.calls).toHaveLength(0);
   });
 

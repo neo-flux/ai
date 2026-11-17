@@ -262,8 +262,8 @@ export async function* execute(
       return finish(undefined, { folded, modelRef, usage, cost });
     }
     const error = failure ?? new AIError({ code: "unknown", provider });
-    const willFallback =
-      error.retryable && !delivered && !signal.aborted && i < (models as ModelRef[]).length - 1;
+    // A caller abort needs no check here: it always classifies as non-retryable `aborted`.
+    const willFallback = error.retryable && !delivered && i < (models as ModelRef[]).length - 1;
     if (hooks.onError !== undefined) await hooks.onError(error, { ...ctx, willFallback });
     if (!willFallback) {
       yield { type: "error", error };

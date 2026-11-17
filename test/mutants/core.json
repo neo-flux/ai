@@ -388,221 +388,214 @@
     "id": "C56",
     "file": "src/run.ts",
     "description": "fallback ignores retryable",
-    "find": "error.retryable && !delivered",
-    "replace": "!delivered"
+    "find": "= error.retryable && !delivered",
+    "replace": "= !delivered"
   },
   {
     "id": "C57",
     "file": "src/run.ts",
     "description": "fallback after the first delivered event",
-    "find": "!delivered && !signal.aborted",
-    "replace": "!signal.aborted"
+    "find": "error.retryable && !delivered && i <",
+    "replace": "error.retryable && i <"
   },
   {
     "id": "C58",
-    "file": "src/run.ts",
-    "description": "fallback despite a caller abort",
-    "find": "&& !signal.aborted && i <",
-    "replace": "&& i <"
-  },
-  {
-    "id": "C59",
     "file": "src/run.ts",
     "description": "beforeRequest result discarded",
     "find": "        request = replaced;\n",
     "replace": ""
   },
   {
-    "id": "C60",
+    "id": "C59",
     "file": "src/run.ts",
     "description": "resolveModel result ignored",
     "find": "if (hooks.resolveModel !== undefined) models = await hooks.resolveModel(",
     "replace": "if (hooks.resolveModel !== undefined) await hooks.resolveModel("
   },
   {
-    "id": "C61",
+    "id": "C60",
     "file": "src/run.ts",
     "description": "onUsage skipped for failed attempts",
     "find": "if (hooks.onUsage !== undefined) await hooks.onUsage(",
     "replace": "if (hooks.onUsage !== undefined && failure === undefined) await hooks.onUsage("
   },
   {
-    "id": "C62",
+    "id": "C61",
     "file": "src/run.ts",
     "description": "onUsage errors swallowed",
     "find": "if (hooks.onUsage !== undefined) await hooks.onUsage({ usage, cost, ctx });",
     "replace": "if (hooks.onUsage !== undefined) try { await hooks.onUsage({ usage, cost, ctx }); } catch {}"
   },
   {
-    "id": "C63",
+    "id": "C62",
     "file": "src/run.ts",
     "description": "onError errors swallowed",
     "find": "if (hooks.onError !== undefined) await hooks.onError(error, { ...ctx, willFallback });",
     "replace": "if (hooks.onError !== undefined) try { await hooks.onError(error, { ...ctx, willFallback }); } catch {}"
   },
   {
-    "id": "C64",
+    "id": "C63",
     "file": "src/run.ts",
     "description": "event order not enforced",
     "find": "        order.push(event);\n",
     "replace": ""
   },
   {
-    "id": "C65",
+    "id": "C64",
     "file": "src/run.ts",
     "description": "messages not validated",
     "find": "      validateMessages(options.messages);\n",
     "replace": ""
   },
   {
-    "id": "C66",
+    "id": "C65",
     "file": "src/run.ts",
     "description": "finish not held back",
     "find": "          held = event;\n          continue;",
     "replace": "          held = event;"
   },
   {
-    "id": "C67",
+    "id": "C66",
     "file": "src/run.ts",
     "description": "output accepted by streamText",
     "find": "} else if (\"output\" in options && internal.output === undefined) {",
     "replace": "} else if (false) {"
   },
   {
-    "id": "C68",
+    "id": "C67",
     "file": "src/run.ts",
     "description": "waits on a stuck adapter's cleanup",
     "find": "await close(iterator, step?.settled !== false);",
     "replace": "await close(iterator, true);"
   },
   {
-    "id": "C69",
+    "id": "C68",
     "file": "src/run.ts",
     "description": "adapter not raced against the signal",
     "find": "    signal.addEventListener(\"abort\", onAbort, { once: true });\n    iterator.next()",
     "replace": "    iterator.next()"
   },
   {
-    "id": "C70",
+    "id": "C69",
     "file": "src/run.ts",
     "description": "no abort check between attempts",
     "find": "    if (signal.aborted) {\n      const error = toAIError(signal.reason, { provider, signal });",
     "replace": "    if (false) {\n      const error = toAIError(signal.reason, { provider, signal });"
   },
   {
-    "id": "C71",
+    "id": "C70",
     "file": "src/run.ts",
     "description": "adapter error classification not passed",
     "find": "classify: modelRef.adapter.classifyError, ",
     "replace": ""
   },
   {
-    "id": "C72",
+    "id": "C71",
     "file": "src/stream-text.ts",
     "description": "break doesn't abort the request",
     "find": "        this.#controller.abort();\n",
     "replace": ""
   },
   {
-    "id": "C73",
+    "id": "C72",
     "file": "src/stream-text.ts",
     "description": "second iterator allowed",
     "find": "if (this.#iterated) throw new TypeError(",
     "replace": "if (false) throw new TypeError("
   },
   {
-    "id": "C74",
+    "id": "C73",
     "file": "src/stream-text.ts",
     "description": "failed outcome left unhandled",
     "find": "    outcome.catch(() => {});\n    this.#started",
     "replace": "    this.#started"
   },
   {
-    "id": "C75",
+    "id": "C74",
     "file": "src/stream-text.ts",
     "description": "eager start",
     "find": "    this.#internal = internal;\n  }",
     "replace": "    this.#internal = internal;\n    this.#start();\n  }"
   },
   {
-    "id": "C76",
+    "id": "C75",
     "file": "src/stream-text.ts",
     "description": "hook error swallowed by the iterator",
     "find": "            throw this.#failure.value;",
     "replace": "            break;"
   },
   {
-    "id": "C77",
+    "id": "C76",
     "file": "src/generate.ts",
     "description": "no repair attempt",
     "find": "  const messages: Message[] = [",
     "replace": "  if (!parsed.ok) throw new AIError({ code: \"output_validation\", rawText: result.text });\n  const messages: Message[] = ["
   },
   {
-    "id": "C78",
+    "id": "C77",
     "file": "src/generate.ts",
     "description": "repair goes back through the chain",
     "find": "fixedModels: [result.modelRef]",
     "replace": "fixedModels: undefined"
   },
   {
-    "id": "C79",
+    "id": "C78",
     "file": "src/generate.ts",
     "description": "repair usage not summed",
     "find": "const usage = sumUsage(result.usage, repaired.usage);",
     "replace": "const usage = repaired.usage;"
   },
   {
-    "id": "C80",
+    "id": "C79",
     "file": "src/generate.ts",
     "description": "repair cost not summed",
     "find": "const cost = sumCost(result.cost, repaired.cost);",
     "replace": "const cost = repaired.cost;"
   },
   {
-    "id": "C81",
+    "id": "C80",
     "file": "src/generate.ts",
     "description": "rawText from the first attempt",
     "find": "rawText: repaired.text,",
     "replace": "rawText: result.text,"
   },
   {
-    "id": "C82",
+    "id": "C81",
     "file": "src/generate.ts",
     "description": "repair attempt marked initial",
     "find": "{ output, kind: \"repair\",",
     "replace": "{ output, kind: \"initial\","
   },
   {
-    "id": "C83",
+    "id": "C82",
     "file": "src/generate.ts",
     "description": "repair attempt numbering restarts",
     "find": "attemptStart: first.attempts,",
     "replace": "attemptStart: 0,"
   },
   {
-    "id": "C84",
+    "id": "C83",
     "file": "src/generate.ts",
     "description": "Markdown fence not stripped",
     "find": "const body = FENCE.exec(trimmed)?.[1] ?? trimmed;",
     "replace": "const body = trimmed;"
   },
   {
-    "id": "C85",
+    "id": "C84",
     "file": "src/testing/fake-adapter.ts",
     "description": "fakeAdapter ignores the signal",
     "find": "          if (ctx.signal.aborted) throw abortError(ctx.signal);\n",
     "replace": ""
   },
   {
-    "id": "C86",
+    "id": "C85",
     "file": "src/adapter.ts",
     "description": "provider JSON Schema target ignored",
     "find": "defaults.jsonSchemaTarget ?? \"draft-2020-12\"",
     "replace": "\"draft-2020-12\""
   },
   {
-    "id": "C87",
+    "id": "C86",
     "file": "scripts/mutate.ts",
     "description": "duplicate ids across files accepted",
     "find": "  if (errors.length === 0) errors.push(...validateMutants(mutants));\n",
