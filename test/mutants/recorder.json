@@ -187,5 +187,33 @@
     "description": "header names not lowercased",
     "find": "    const name = key.toLowerCase();",
     "replace": "    const name = key;"
+  },
+  {
+    "id": "R28",
+    "file": "scripts/recorder/models.ts",
+    "description": "per-case override ignored",
+    "find": "  return override ?? config.default;",
+    "replace": "  return config.default;"
+  },
+  {
+    "id": "R29",
+    "file": "scripts/recorder/models.ts",
+    "description": "error-model's deliberate id checked",
+    "find": "caseIds.filter((id) => id !== \"error-model\")",
+    "replace": "caseIds"
+  },
+  {
+    "id": "R30",
+    "file": "scripts/recorder/models.ts",
+    "description": "missing ids not reported",
+    "find": "  return configured.filter((id) => missing.has(id));",
+    "replace": "  return [];"
+  },
+  {
+    "id": "R31",
+    "file": "scripts/recorder/models.ts",
+    "description": "model list read to the end",
+    "find": "    if (missing.size === 0) break;\n",
+    "replace": ""
   }
 ]
