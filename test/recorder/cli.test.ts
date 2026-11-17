@@ -214,6 +214,14 @@ describe("scrubAll", () => {
     expect(existsSync(join(root, "openai/abort.jsonl"))).toBe(false);
   });
 
+  test("stray non-directory entries in the raw directory are skipped", () => {
+    root = mkdtempSync(join(tmpdir(), "neoflux-ai-scrub-"));
+    mkdirSync(join(root, ".raw/openai"), { recursive: true });
+    writeFileSync(join(root, ".raw/.DS_Store"), "x");
+    writeFileSync(join(root, ".raw/openai/text.jsonl"), raw("resp_68a1b2c3d4e5f6"));
+    expect(scrubAll(root)).toEqual({ written: ["openai/text.jsonl"], refused: [] });
+  });
+
   test("an absent raw directory scrubs nothing", () => {
     root = mkdtempSync(join(tmpdir(), "neoflux-ai-scrub-"));
     expect(scrubAll(root)).toEqual({ written: [], refused: [] });

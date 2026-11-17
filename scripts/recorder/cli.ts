@@ -154,9 +154,14 @@ export function scrubAll(fixtures: string): ScrubResult {
   const result: ScrubResult = { written: [], refused: [] };
   const raw = join(fixtures, ".raw");
   if (!existsSync(raw)) return result;
-  for (const provider of readdirSync(raw).sort()) {
-    for (const name of readdirSync(join(raw, provider)).sort()) {
-      if (!name.endsWith(".jsonl")) continue;
+  const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
+  // Only directories of regular .jsonl files; stray entries such as .DS_Store are skipped.
+  for (const entry of readdirSync(raw, { withFileTypes: true }).sort(byName)) {
+    if (!entry.isDirectory()) continue;
+    const provider = entry.name;
+    for (const item of readdirSync(join(raw, provider), { withFileTypes: true }).sort(byName)) {
+      const name = item.name;
+      if (!item.isFile() || !name.endsWith(".jsonl")) continue;
       const file = `${provider}/${name}`;
       try {
         const out = scrubText(readFileSync(join(raw, file), "utf8"));

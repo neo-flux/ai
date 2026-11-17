@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   checkFixtureCoverage,
+  checkFixturePaths,
   FORBIDDEN_FIXTURE_KEYS,
   findFixtureLeaks,
   MAX_FIXTURE_BYTES,
@@ -220,6 +221,10 @@ describe("fixtures in the repository", () => {
     expect(ignored.exitCode).toBe(0);
   });
 
+  test("every file under fixtures/ is a provider's case file", () => {
+    expect(checkFixturePaths(listed())).toEqual([]);
+  });
+
   test("every fixture file passes the leak guard", () => {
     for (const path of listed().filter((p) => p.endsWith(".jsonl"))) {
       expect({ path, leaks: findFixtureLeaks(readFileSync(join(root, path), "utf8")) }).toEqual({
@@ -311,5 +316,29 @@ describe("findFixtureLeaks: message content", () => {
     expect(
       leaks({ delta: "Version 7.57.0 of https://example.test/docs is out. 3 * 4 = 12." }),
     ).toEqual([]);
+  });
+});
+
+describe("checkFixturePaths", () => {
+  test("accepts provider case files only", () => {
+    expect(
+      checkFixturePaths([
+        "fixtures/openai/text.jsonl",
+        "fixtures/deepseek/error-reasoning-missing.jsonl",
+      ]),
+    ).toEqual([]);
+    expect(
+      checkFixturePaths([
+        "fixtures/notes.txt",
+        "fixtures/openai/text.json",
+        "fixtures/openai/nested/text.jsonl",
+        "fixtures/openai/.DS_Store",
+      ]),
+    ).toEqual([
+      "unexpected file fixtures/notes.txt",
+      "unexpected file fixtures/openai/text.json",
+      "unexpected file fixtures/openai/nested/text.jsonl",
+      "unexpected file fixtures/openai/.DS_Store",
+    ]);
   });
 });

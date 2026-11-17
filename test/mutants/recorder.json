@@ -845,5 +845,19 @@
     "description": "guard: prototype-changing keys accepted",
     "find": "      if (DANGEROUS_KEYS.has(k)) {",
     "replace": "      if (false) {"
+  },
+  {
+    "id": "R122",
+    "file": "scripts/guards.ts",
+    "description": "paths: any file under fixtures accepted",
+    "find": "    .filter((p) => !/^fixtures\\/[a-z]+\\/[a-z0-9-]+\\.jsonl$/.test(p))",
+    "replace": "    .filter(() => false)"
+  },
+  {
+    "id": "R123",
+    "file": "scripts/recorder/cli.ts",
+    "description": "scrub: stray raw entries not skipped",
+    "find": "    if (!entry.isDirectory()) continue;\n",
+    "replace": ""
   }
 ]

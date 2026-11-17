@@ -573,3 +573,10 @@ export function redactSecrets(text: string): string {
     text,
   );
 }
+
+/** Paths under fixtures/ (raw recordings excluded) must all be `<provider>/<case>.jsonl`. */
+export function checkFixturePaths(paths: readonly string[]): string[] {
+  return paths
+    .filter((p) => !/^fixtures\/[a-z]+\/[a-z0-9-]+\.jsonl$/.test(p))
+    .map((p) => `unexpected file ${p}`);
+}
