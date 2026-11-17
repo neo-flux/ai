@@ -58,3 +58,47 @@ export async function check(root, testing) {
   const error = new root.AIError({ code: "rate_limit" });
   if (!root.isAIError(error) || !error.retryable) throw new Error("AIError");
 }
+
+// Runs the DeepSeek adapter on an inline Chat Completions replay: the compat translation and the
+// peer-free runtime of `/deepseek` on each runtime.
+export async function checkDeepSeek(root, testing, deepseek) {
+  const lines = [
+    {
+      kind: "meta",
+      format: 1,
+      provider: "deepseek",
+      case: "text",
+      api: "chat.completions",
+      sdk: "none@0",
+      model: "smoke",
+      recordedOn: "2026-01-01",
+    },
+    { kind: "call", index: 0, request: {}, options: {} },
+    {
+      kind: "chunk",
+      call: 0,
+      data: { choices: [{ index: 0, delta: { reasoning_content: "think" }, finish_reason: null }] },
+    },
+    {
+      kind: "chunk",
+      call: 0,
+      data: {
+        choices: [{ index: 0, delta: { content: "hi" }, finish_reason: "stop" }],
+        usage: { prompt_tokens: 3, completion_tokens: 2 },
+      },
+    },
+    { kind: "end", call: 0, outcome: "completed" },
+  ];
+  const fixture = testing.parseFixture(lines.map((line) => JSON.stringify(line)).join("\n"));
+  const client = testing.replayClient(fixture);
+  const model = deepseek.deepseek({ client })("smoke");
+  const stream = root.streamText({ model, messages: [{ role: "user", content: "hi" }] });
+  const types = [];
+  for await (const event of testing.checkEventOrder(stream)) types.push(event.type);
+  if (types.join(",") !== "reasoning-delta,reasoning-end,text-delta,usage,finish") {
+    throw new Error(`deepseek events: ${types}`);
+  }
+  const result = await stream.result;
+  if (result.text !== "hi" || result.usage.inputTokens !== 3) throw new Error("deepseek result");
+  if (client.calls[0]?.params.model !== "smoke") throw new Error("deepseek request");
+}

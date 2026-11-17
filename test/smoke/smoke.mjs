@@ -4,7 +4,7 @@ import * as root from "@neoflux/ai";
 import * as compat from "@neoflux/ai/compat";
 import * as deepseek from "@neoflux/ai/deepseek";
 import * as testing from "@neoflux/ai/testing";
-import { check } from "./check.mjs";
+import { check, checkDeepSeek } from "./check.mjs";
 import pkg from "./node_modules/@neoflux/ai/package.json" with { type: "json" };
 
 const entries = { ".": root, "./compat": compat, "./deepseek": deepseek, "./testing": testing };
@@ -26,5 +26,6 @@ for (const [subpath, namespace] of Object.entries(entries)) {
   if (namespace[Symbol.toStringTag] !== "Module") fail(`${subpath} did not load as a module`);
 }
 await check(root, testing).catch((error) => fail(error.message));
+await checkDeepSeek(root, testing, deepseek).catch((error) => fail(error.message));
 
 console.log(`ok ${runtime}`);
