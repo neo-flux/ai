@@ -26,17 +26,9 @@ export const MODELS: Record<Provider, ProviderModels> = {
     },
   },
   anthropic: {
+    // The reasoning cases' thinking settings live in cases.ts. A `params` override here would
+    // replace them.
     default: { model: "claude-haiku-5-5" },
-    cases: {
-      reasoning: {
-        model: "claude-haiku-5-5",
-        params: { thinking: { type: "enabled", budget_tokens: 1024 } },
-      },
-      "reasoning-tool-round-trip": {
-        model: "claude-haiku-5-5",
-        params: { thinking: { type: "enabled", budget_tokens: 1024 } },
-      },
-    },
   },
   deepseek: {
     default: { model: "deepseek-flash" },

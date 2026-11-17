@@ -859,5 +859,33 @@
     "description": "scrub: stray raw entries not skipped",
     "find": "    if (!entry.isDirectory()) continue;\n",
     "replace": ""
+  },
+  {
+    "id": "R124",
+    "file": "scripts/recorder/cases.ts",
+    "description": "Anthropic thinking back on budget_tokens",
+    "find": "const THINKING = {\n  type: \"adaptive\",\n  display: \"summarized\",\n}",
+    "replace": "const THINKING = {\n  type: \"enabled\",\n  budget_tokens: 1024,\n}"
+  },
+  {
+    "id": "R125",
+    "file": "scripts/recorder/cases.ts",
+    "description": "Anthropic thinking display omitted",
+    "find": "  type: \"adaptive\",\n  display: \"summarized\",\n}",
+    "replace": "  type: \"adaptive\",\n}"
+  },
+  {
+    "id": "R126",
+    "file": "scripts/recorder/cases.ts",
+    "description": "Anthropic reasoning effort dropped",
+    "find": "          thinking: THINKING,\n          output_config: EFFORT,",
+    "replace": "          thinking: THINKING,"
+  },
+  {
+    "id": "R127",
+    "file": "scripts/recorder/cases.ts",
+    "description": "Anthropic round trip effort dropped",
+    "find": "        thinking: THINKING,\n        output_config: EFFORT,",
+    "replace": "        thinking: THINKING,"
   }
 ]

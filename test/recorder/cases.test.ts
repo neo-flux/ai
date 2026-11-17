@@ -10,7 +10,8 @@ import {
   PROMPTS,
   TOOL_RESULT,
 } from "../../scripts/recorder/cases.ts";
-import { MISSING_MODEL, PROVIDERS, type Provider } from "../../scripts/recorder/models.ts";
+import { plan } from "../../scripts/recorder/cli.ts";
+import { MISSING_MODEL, MODELS, PROVIDERS, type Provider } from "../../scripts/recorder/models.ts";
 import type { CaseSpec, PlannedCall } from "../../scripts/recorder/record.ts";
 import type { FixtureCall } from "../../src/testing/fixture.ts";
 
@@ -129,8 +130,8 @@ describe("case list", () => {
     expect(openai.include).toEqual(["reasoning.encrypted_content"]);
     expect(openai.store).toBe(false);
     const anthropic = params(build("anthropic", "reasoning"));
-    expect(anthropic.thinking).toEqual({ type: "enabled", budget_tokens: 1024 });
-    expect(anthropic.max_tokens as number).toBeGreaterThan(1024);
+    expect(anthropic.thinking).toEqual({ type: "adaptive", display: "summarized" });
+    expect(anthropic.output_config).toEqual({ effort: "high" });
   });
 
   test("length caps output at 16 tokens", () => {
@@ -303,7 +304,8 @@ describe("turn 2 builders", () => {
       role: "user",
       content: [{ type: "tool_result", tool_use_id: "toolu_1", content: TOOL_RESULT }],
     });
-    expect(p.thinking).toEqual({ type: "enabled", budget_tokens: 1024 });
+    expect(p.thinking).toEqual({ type: "adaptive", display: "summarized" });
+    expect(p.output_config).toEqual({ effort: "high" });
   });
 
   const chatTurn1 = recorded([
@@ -557,6 +559,66 @@ describe("case builders: audit follow-ups", () => {
         id: c.id,
         so: { include_obfuscation: false },
       });
+    }
+  });
+});
+
+describe("Anthropic reasoning request shape", () => {
+  // Current models reject thinking.type "enabled" with budget_tokens; adaptive thinking plus
+  // output_config.effort replaces it. Built through the real model config, so a stale per-case
+  // override in models.ts would fail here too.
+  const planned = plan(
+    {
+      providers: ["anthropic"],
+      cases: ["reasoning", "reasoning-tool-round-trip"],
+      include: [],
+      dryRun: true,
+    },
+    MODELS,
+  );
+  const turn1 = recorded([
+    {
+      type: "content_block_start",
+      index: 0,
+      content_block: { type: "tool_use", id: "toolu_1", name: "get_weather", input: {} },
+    },
+    { type: "content_block_stop", index: 0 },
+  ]);
+
+  test("uses adaptive thinking with summarized display and an explicit effort on every turn", () => {
+    for (const p of planned) {
+      for (let turn = 0; turn < p.spec.turns; turn++) {
+        const request = p.spec.build({
+          turn,
+          model: p.model.model,
+          previous: turn === 0 ? [] : [turn1],
+        }).params as Record<string, unknown>;
+        expect({
+          id: p.caseId,
+          turn,
+          thinking: request.thinking,
+          output_config: request.output_config,
+        }).toEqual({
+          id: p.caseId,
+          turn,
+          thinking: { type: "adaptive", display: "summarized" },
+          output_config: { effort: "high" },
+        });
+        expect(JSON.stringify(request)).not.toContain("budget_tokens");
+        expect(
+          request.tool_choice === undefined ||
+            (request.tool_choice as { type: string }).type === "auto",
+        ).toBe(true);
+        expect(request.max_tokens as number).toBeGreaterThanOrEqual(4096);
+      }
+    }
+  });
+
+  test("the model config leaves the configured models in place and adds no thinking override", () => {
+    for (const id of ["reasoning", "reasoning-tool-round-trip"]) {
+      const entry = MODELS.anthropic.cases?.[id];
+      expect(entry?.model ?? MODELS.anthropic.default.model).toBe("claude-haiku-5-5");
+      expect(entry?.params?.thinking).toBeUndefined();
     }
   });
 });

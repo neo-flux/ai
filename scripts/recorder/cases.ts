@@ -236,7 +236,14 @@ const ANTHROPIC_TOOL = {
   description: WEATHER.description,
   input_schema: { ...WEATHER.parameters, type: "object" as const },
 } satisfies Anthropic.Tool;
-const THINKING = { type: "enabled", budget_tokens: 1024 } satisfies Anthropic.ThinkingConfigParam;
+// Current models reject thinking.type "enabled" with budget_tokens: adaptive thinking, steered by
+// output_config.effort. "summarized" so the fixture carries reasoning text and not only signatures;
+// "high" so the model is likely to think on these small prompts at all.
+const THINKING = {
+  type: "adaptive",
+  display: "summarized",
+} satisfies Anthropic.ThinkingConfigParam;
+const EFFORT = { effort: "high" } satisfies Anthropic.OutputConfig;
 
 const messages = (model: string, prompt: string, extra: Partial<MessageParams> = {}) =>
   ({
@@ -354,13 +361,20 @@ function anthropicCases(): CaseSpec[] {
       ),
     ),
     one("reasoning", api, ({ model }) =>
-      call(messages(model, PROMPTS.reasoning, { max_tokens: 2048, thinking: THINKING })),
+      call(
+        messages(model, PROMPTS.reasoning, {
+          max_tokens: 4096,
+          thinking: THINKING,
+          output_config: EFFORT,
+        }),
+      ),
     ),
-    // Thinking can't be combined with a forced tool, so the prompt asks for it instead.
+    // A forced tool returns no thinking block, so the prompt asks for the tool instead.
     two("reasoning-tool-round-trip", api, ({ model, turn, previous }) => {
       const extra = {
-        max_tokens: 2048,
+        max_tokens: 4096,
         thinking: THINKING,
+        output_config: EFFORT,
         tools: [ANTHROPIC_TOOL],
         tool_choice: { type: "auto" as const },
       };
