@@ -40,5 +40,68 @@
     "description": "create error after chunks accepted",
     "find": "      if (value.phase === \"create\" && open.chunks.length > 0) {",
     "replace": "      if (false) {"
+  },
+  {
+    "id": "R7",
+    "file": "src/testing/replay.ts",
+    "description": "calls served out of order (always call 0)",
+    "find": "const recorded = fixture.calls[index];",
+    "replace": "const recorded = fixture.calls[0];"
+  },
+  {
+    "id": "R8",
+    "file": "src/testing/replay.ts",
+    "description": "abort ignored mid-stream",
+    "find": "          if (signal?.aborted === true) return;\n          yield chunk;",
+    "replace": "          yield chunk;"
+  },
+  {
+    "id": "R9",
+    "file": "src/testing/replay.ts",
+    "description": "abort throws instead of returning silently",
+    "find": "          if (signal?.aborted === true) return;\n          yield chunk;",
+    "replace": "          if (signal?.aborted === true) throw new Error(\"aborted\");\n          yield chunk;"
+  },
+  {
+    "id": "R10",
+    "file": "src/testing/replay.ts",
+    "description": "stream error thrown before the chunks",
+    "find": "      async *[Symbol.asyncIterator]() {\n",
+    "replace": "      async *[Symbol.asyncIterator]() {\n        if (error !== undefined) throw rebuild(error.error);\n"
+  },
+  {
+    "id": "R11",
+    "file": "src/testing/replay.ts",
+    "description": "headers left as a plain record",
+    "find": "    headers: new Headers(headers),",
+    "replace": "    headers,"
+  },
+  {
+    "id": "R12",
+    "file": "src/testing/replay.ts",
+    "description": "extra call doesn't throw",
+    "find": "    if (recorded === undefined) {",
+    "replace": "    if (recorded === undefined && false) {"
+  },
+  {
+    "id": "R13",
+    "file": "src/testing/replay.ts",
+    "description": "create-phase error deferred to the stream",
+    "find": "    if (error?.phase === \"create\") throw rebuild(error.error);\n",
+    "replace": ""
+  },
+  {
+    "id": "R14",
+    "file": "src/testing/replay.ts",
+    "description": "chunks served by reference",
+    "find": "recorded.chunks.map((chunk) => structuredClone(chunk))",
+    "replace": "recorded.chunks"
+  },
+  {
+    "id": "R15",
+    "file": "src/testing/replay.ts",
+    "description": "recorded status null kept as null",
+    "find": "    status: status ?? undefined,",
+    "replace": "    status,"
   }
 ]
