@@ -5,6 +5,7 @@ import {
   type AIErrorCode,
   getProviderError,
   isAIError,
+  MAX_RETRY_AFTER_MS,
   parseRetryAfter,
   toAIError,
 } from "../../src/errors.ts";
@@ -204,10 +205,34 @@ describe("parseRetryAfter", () => {
     expect(parseRetryAfter({ "retry-after": "Wed, 31 Dec 2025 23:59:00 GMT" }, now)).toBe(0);
   });
 
-  test("drops values that aren't finite safe integers", () => {
+  test("drops non-finite values", () => {
     expect(parseRetryAfter({ "retry-after": "9".repeat(400) }, now)).toBeUndefined();
     expect(parseRetryAfter({ "retry-after-ms": "9".repeat(400) }, now)).toBeUndefined();
-    expect(parseRetryAfter({ "retry-after": "9007199254740993" }, now)).toBeUndefined();
+  });
+
+  test("clamps to one hour", () => {
+    expect(MAX_RETRY_AFTER_MS).toBe(3_600_000);
+    expect(parseRetryAfter({ "retry-after": "3600" }, now)).toBe(3_600_000);
+    expect(parseRetryAfter({ "retry-after": "3601" }, now)).toBe(3_600_000);
+    expect(parseRetryAfter({ "retry-after-ms": "3600001" }, now)).toBe(3_600_000);
+    expect(parseRetryAfter({ "retry-after": "9007199254740993" }, now)).toBe(3_600_000);
+    expect(parseRetryAfter({ "retry-after": "Fri, 01 Jan 2100 00:00:00 GMT" }, now)).toBe(
+      3_600_000,
+    );
+  });
+
+  test("the AIError constructor applies the same bounds", () => {
+    expect(new AIError({ code: "rate_limit", retryAfterMs: 5_000_000 }).retryAfterMs).toBe(
+      3_600_000,
+    );
+    expect(new AIError({ code: "rate_limit", retryAfterMs: 3_600_000 }).retryAfterMs).toBe(
+      3_600_000,
+    );
+    expect(new AIError({ code: "rate_limit", retryAfterMs: 0 }).retryAfterMs).toBe(0);
+    expect(new AIError({ code: "rate_limit", retryAfterMs: 1.4 }).retryAfterMs).toBe(1);
+    for (const bad of [-1, -0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(new AIError({ code: "rate_limit", retryAfterMs: bad }).retryAfterMs).toBeUndefined();
+    }
   });
 
   test("ignores garbage and negatives", () => {

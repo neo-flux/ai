@@ -117,7 +117,7 @@ export class AIError extends Error {
     this.status = options.status;
     this.providerCode = identifier(options.providerCode);
     this.providerType = identifier(options.providerType);
-    this.retryAfterMs = options.retryAfterMs;
+    this.retryAfterMs = clampRetryAfter(options.retryAfterMs);
     if ("providerError" in options) providerErrors.set(this, options.providerError);
     // Content-bearing fields stay off enumeration so logging and spreading can't leak them.
     Object.defineProperty(this, "rawText", { value: options.rawText, enumerable: false });
@@ -158,20 +158,27 @@ export function getHeader(headers: unknown, name: string): string | undefined {
 }
 
 const NUMBER = /^\d+(?:\.\d+)?$/;
-const safe = (ms: number): number | undefined => (Number.isSafeInteger(ms) ? ms : undefined);
 const INTEGER = /^\d+$/;
+
+/** The largest `retryAfterMs` the library reports: one hour. Longer waits are clamped to it. */
+export const MAX_RETRY_AFTER_MS = 3_600_000;
+
+/** Clamps to 0..MAX_RETRY_AFTER_MS. Negative, non-finite and missing values become undefined. */
+export function clampRetryAfter(ms: number | undefined): number | undefined {
+  if (ms === undefined || !Number.isFinite(ms) || ms < 0) return undefined;
+  return Math.min(Math.round(ms), MAX_RETRY_AFTER_MS);
+}
 
 export function parseRetryAfter(headers: unknown, now: number = Date.now()): number | undefined {
   const ms = getHeader(headers, "retry-after-ms")?.trim();
-  // Values that don't fit a finite safe integer are dropped, not passed on as Infinity.
-  // TODO: confirm an upper bound for retryAfterMs (a hostile provider can send a far-future date).
-  if (ms !== undefined && NUMBER.test(ms)) return safe(Math.round(Number(ms)));
+  if (ms !== undefined && NUMBER.test(ms)) return clampRetryAfter(Number(ms));
   const value = getHeader(headers, "retry-after")?.trim();
   if (value === undefined || value === "") return undefined;
-  if (INTEGER.test(value)) return safe(Number(value) * 1000);
+  if (INTEGER.test(value)) return clampRetryAfter(Number(value) * 1000);
   if (/^-?\d/.test(value)) return undefined;
   const date = Date.parse(value);
-  return Number.isNaN(date) ? undefined : safe(Math.max(0, date - now));
+  // A date in the past means the wait is already over: retry now.
+  return Number.isNaN(date) ? undefined : clampRetryAfter(Math.max(0, date - now));
 }
 
 /** What core extracts from a thrown value, by shape only. */

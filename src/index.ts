@@ -18,6 +18,7 @@ export {
   type ErrorShape,
   getProviderError,
   isAIError,
+  MAX_RETRY_AFTER_MS,
 } from "./errors.ts";
 export type {
   ErrorEvent,

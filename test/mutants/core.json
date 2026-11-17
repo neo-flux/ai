@@ -108,8 +108,8 @@
     "id": "C16",
     "file": "src/errors.ts",
     "description": "retry-after seconds not converted to ms",
-    "find": "return safe(Number(value) * 1000);",
-    "replace": "return safe(Number(value));"
+    "find": "clampRetryAfter(Number(value) * 1000)",
+    "replace": "clampRetryAfter(Number(value))"
   },
   {
     "id": "C17",
@@ -765,40 +765,75 @@
   {
     "id": "C110",
     "file": "src/errors.ts",
-    "description": "huge retry-after passed through",
-    "find": "const safe = (ms: number): number | undefined => (Number.isSafeInteger(ms) ? ms : undefined);",
-    "replace": "const safe = (ms: number): number | undefined => ms;"
+    "description": "retry-after: upper bound not applied",
+    "find": "return Math.min(Math.round(ms), MAX_RETRY_AFTER_MS);",
+    "replace": "return Math.round(ms);"
   },
   {
     "id": "C111",
+    "file": "src/errors.ts",
+    "description": "retry-after: upper bound off by one hour",
+    "find": "export const MAX_RETRY_AFTER_MS = 3_600_000;",
+    "replace": "export const MAX_RETRY_AFTER_MS = 7_200_000;"
+  },
+  {
+    "id": "C112",
+    "file": "src/errors.ts",
+    "description": "retry-after: negative values not ignored",
+    "find": "|| !Number.isFinite(ms) || ms < 0) return undefined;",
+    "replace": "|| !Number.isFinite(ms)) return undefined;"
+  },
+  {
+    "id": "C113",
+    "file": "src/errors.ts",
+    "description": "retry-after: past dates not clamped to 0",
+    "find": "clampRetryAfter(Math.max(0, date - now))",
+    "replace": "clampRetryAfter(date - now)"
+  },
+  {
+    "id": "C114",
+    "file": "src/errors.ts",
+    "description": "retry-after: non-finite values clamped instead of dropped",
+    "find": "ms === undefined || !Number.isFinite(ms) ||",
+    "replace": "ms === undefined ||"
+  },
+  {
+    "id": "C115",
+    "file": "src/errors.ts",
+    "description": "retry-after: constructor skips the bounds",
+    "find": "this.retryAfterMs = clampRetryAfter(options.retryAfterMs);",
+    "replace": "this.retryAfterMs = options.retryAfterMs;"
+  },
+  {
+    "id": "C116",
     "file": "src/events.ts",
     "description": "unknown event types echoed in the error",
     "find": "&& KNOWN_TYPES.includes(event.type)\n",
     "replace": "\n"
   },
   {
-    "id": "C112",
+    "id": "C117",
     "file": "src/stream-text.ts",
     "description": "result resolves after a failed held finish",
     "find": "  if (outcome.error !== undefined) throw outcome.error;\n",
     "replace": ""
   },
   {
-    "id": "C113",
+    "id": "C118",
     "file": "src/errors.ts",
     "description": "provider error stored as cause",
     "find": "    providerError: error,\n  };",
     "replace": "    cause: error,\n  };"
   },
   {
-    "id": "C114",
+    "id": "C119",
     "file": "src/errors.ts",
     "description": "aborted provider error stored as cause",
     "find": "      provider,\n      providerError: error,\n    });",
     "replace": "      provider,\n      cause: error,\n    });"
   },
   {
-    "id": "C115",
+    "id": "C120",
     "file": "src/errors.ts",
     "description": "provider error not recorded",
     "find": "    if (\"providerError\" in options) providerErrors.set(this, options.providerError);\n",
