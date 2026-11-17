@@ -40,16 +40,16 @@ One JSON object per line. The format is unstable while the package is 0.x.
 
 Every provider records the same cases with the same synthetic prompts:
 
-| Case                                                        | What it covers                                                                 |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `text`, `stream-long`, `length`                             | Plain replies, many deltas, an output cap                                      |
-| `tool-round-trip`, `tool-parallel`                          | A forced tool call answered in a second turn, and two calls in one turn        |
-| `structured`                                                | Native structured output (JSON mode plus the schema in the prompt on DeepSeek) |
-| `reasoning`, `reasoning-tool-round-trip`                    | Reasoning output, and reasoning data passed back on the next turn              |
-| `abort`                                                     | The recorder aborts after the third item                                       |
-| `error-auth`, `error-model`, `error-param`, `error-timeout` | A fake key, an unknown model, an output cap of 0, a 1 ms client timeout        |
-| `error-context`                                             | Opt-in: one input larger than the model's context window                       |
-| `error-reasoning-missing`                                   | DeepSeek only: a tool turn without the `reasoning_content` it requires         |
+| Case                                                        | What it covers                                                                                                                                |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `text`, `stream-long`, `length`                             | Plain replies, many deltas, an output cap                                                                                                     |
+| `tool-round-trip`, `tool-parallel`                          | A forced tool call answered in a second turn, and two calls in one turn                                                                       |
+| `structured`                                                | Native structured output (JSON mode plus the schema in the prompt on DeepSeek)                                                                |
+| `reasoning`, `reasoning-tool-round-trip`                    | Reasoning output, and reasoning data passed back on the next turn                                                                             |
+| `abort`                                                     | The recorder aborts after the third item                                                                                                      |
+| `error-auth`, `error-model`, `error-param`, `error-timeout` | A fake key, an unknown model, an output cap of 0, a 1 ms client timeout                                                                       |
+| `error-context`                                             | Opt-in: one input larger than the model's context window                                                                                      |
+| `error-reasoning-missing`                                   | DeepSeek only: a tool turn sent without its `reasoning_content`. The docs say this is a 400, but the 2026-11-17 recording completed normally. |
 
 Rate limits, server errors, content filtering and empty balances can't be triggered safely, so they aren't recorded. Adapter tests build those shapes by hand from the provider docs.
 

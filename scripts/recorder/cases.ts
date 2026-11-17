@@ -551,7 +551,8 @@ function chatCases(f: ChatFlavour): CaseSpec[] {
     one("error-timeout", api, ({ model }) => call(chat(model, PROMPTS.text), { timeoutMs: 1 })),
     one("error-context", api, ({ model }) => call(chat(model, filler(f.provider)))),
   ];
-  // DeepSeek rejects a tool turn whose reasoning_content was dropped; record that error too.
+  // DeepSeek's docs say a tool turn without its reasoning_content is a 400. The 2026-11-17
+  // recording completed instead, so this case shows what happens when the reasoning is dropped.
   if (f.provider === "deepseek") cases.push(roundTrip("error-reasoning-missing", false));
   return cases;
 }
