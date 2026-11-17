@@ -2,11 +2,12 @@
 // on Node and Deno. Static imports by package name only, so Deno needs no permissions.
 import * as root from "@neoflux/ai";
 import * as compat from "@neoflux/ai/compat";
+import * as deepseek from "@neoflux/ai/deepseek";
 import * as testing from "@neoflux/ai/testing";
 import { check } from "./check.mjs";
 import pkg from "./node_modules/@neoflux/ai/package.json" with { type: "json" };
 
-const entries = { ".": root, "./compat": compat, "./testing": testing };
+const entries = { ".": root, "./compat": compat, "./deepseek": deepseek, "./testing": testing };
 
 const runtime =
   typeof globalThis.Deno === "undefined"

@@ -17,6 +17,10 @@
       "types": "./dist/compat/index.d.ts",
       "default": "./dist/compat/index.js"
     },
+    "./deepseek": {
+      "types": "./dist/deepseek/index.d.ts",
+      "default": "./dist/deepseek/index.js"
+    },
     "./testing": {
       "types": "./dist/testing/index.d.ts",
       "default": "./dist/testing/index.js"
