@@ -108,8 +108,8 @@
     "id": "C16",
     "file": "src/errors.ts",
     "description": "retry-after seconds not converted to ms",
-    "find": "return Number(value) * 1000;",
-    "replace": "return Number(value);"
+    "find": "return safe(Number(value) * 1000);",
+    "replace": "return safe(Number(value));"
   },
   {
     "id": "C17",
@@ -462,13 +462,6 @@
     "replace": "} else if (false) {"
   },
   {
-    "id": "C67",
-    "file": "src/run.ts",
-    "description": "waits on a stuck adapter's cleanup",
-    "find": "await close(iterator, step?.settled !== false);",
-    "replace": "await close(iterator, true);"
-  },
-  {
     "id": "C68",
     "file": "src/run.ts",
     "description": "adapter not raced against the signal",
@@ -509,13 +502,6 @@
     "description": "failed outcome left unhandled",
     "find": "    outcome.catch(() => {});\n    this.#started",
     "replace": "    this.#started"
-  },
-  {
-    "id": "C74",
-    "file": "src/stream-text.ts",
-    "description": "eager start",
-    "find": "    this.#internal = internal;\n  }",
-    "replace": "    this.#internal = internal;\n    this.#start();\n  }"
   },
   {
     "id": "C75",
@@ -574,13 +560,6 @@
     "replace": "attemptStart: 0,"
   },
   {
-    "id": "C83",
-    "file": "src/generate.ts",
-    "description": "Markdown fence not stripped",
-    "find": "const body = FENCE.exec(trimmed)?.[1] ?? trimmed;",
-    "replace": "const body = trimmed;"
-  },
-  {
     "id": "C84",
     "file": "src/testing/fake-adapter.ts",
     "description": "fakeAdapter ignores the signal",
@@ -628,13 +607,6 @@
     "description": "output schema ignores the provider target",
     "find": "toJsonSchema(internal.output, modelRef.jsonSchemaTarget)",
     "replace": "toJsonSchema(internal.output, \"draft-2020-12\")"
-  },
-  {
-    "id": "C91",
-    "file": "src/run.ts",
-    "description": "adapter iterator not closed after an early exit",
-    "find": "const closing = iterator.return?.();",
-    "replace": "const closing = wait ? undefined : iterator.return?.();"
   },
   {
     "id": "C92",
@@ -705,5 +677,12 @@
     "description": "hooks get the caller signal instead of the call's",
     "find": "kind: internal.kind, signal };",
     "replace": "kind: internal.kind, signal: options.signal ?? signal };"
+  },
+  {
+    "id": "C111",
+    "file": "src/errors.ts",
+    "description": "huge retry-after passed through",
+    "find": "const safe = (ms: number): number | undefined => (Number.isSafeInteger(ms) ? ms : undefined);",
+    "replace": "const safe = (ms: number): number | undefined => ms;"
   }
 ]

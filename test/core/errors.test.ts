@@ -175,6 +175,12 @@ describe("parseRetryAfter", () => {
     expect(parseRetryAfter({ "retry-after": "Wed, 31 Dec 2025 23:59:00 GMT" }, now)).toBe(0);
   });
 
+  test("drops values that aren't finite safe integers", () => {
+    expect(parseRetryAfter({ "retry-after": "9".repeat(400) }, now)).toBeUndefined();
+    expect(parseRetryAfter({ "retry-after-ms": "9".repeat(400) }, now)).toBeUndefined();
+    expect(parseRetryAfter({ "retry-after": "9007199254740993" }, now)).toBeUndefined();
+  });
+
   test("ignores garbage and negatives", () => {
     expect(parseRetryAfter({ "retry-after": "soon" }, now)).toBeUndefined();
     expect(parseRetryAfter({ "retry-after": "-3" }, now)).toBeUndefined();

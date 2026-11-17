@@ -101,6 +101,9 @@ export class AIError extends Error {
     this.providerType = identifier(options.providerType);
     this.retryAfterMs = options.retryAfterMs;
     // Content-bearing fields stay off enumeration so logging and spreading can't leak them.
+    // `cause` is the standard non-enumerable property, but util.inspect and console.log still
+    // print it, and an SDK error can carry provider messages that echo prompt text.
+    // TODO: confirm whether `cause` should be hidden from inspect or kept and documented.
     Object.defineProperty(this, "rawText", { value: options.rawText, enumerable: false });
     Object.defineProperty(this, "issues", { value: options.issues, enumerable: false });
     Object.defineProperty(this, BRAND, { value: true, enumerable: false });
@@ -139,17 +142,20 @@ export function getHeader(headers: unknown, name: string): string | undefined {
 }
 
 const NUMBER = /^\d+(?:\.\d+)?$/;
+const safe = (ms: number): number | undefined => (Number.isSafeInteger(ms) ? ms : undefined);
 const INTEGER = /^\d+$/;
 
 export function parseRetryAfter(headers: unknown, now: number = Date.now()): number | undefined {
   const ms = getHeader(headers, "retry-after-ms")?.trim();
-  if (ms !== undefined && NUMBER.test(ms)) return Math.round(Number(ms));
+  // Values that don't fit a finite safe integer are dropped, not passed on as Infinity.
+  // TODO: confirm an upper bound for retryAfterMs (a hostile provider can send a far-future date).
+  if (ms !== undefined && NUMBER.test(ms)) return safe(Math.round(Number(ms)));
   const value = getHeader(headers, "retry-after")?.trim();
   if (value === undefined || value === "") return undefined;
-  if (INTEGER.test(value)) return Number(value) * 1000;
+  if (INTEGER.test(value)) return safe(Number(value) * 1000);
   if (/^-?\d/.test(value)) return undefined;
   const date = Date.parse(value);
-  return Number.isNaN(date) ? undefined : Math.max(0, date - now);
+  return Number.isNaN(date) ? undefined : safe(Math.max(0, date - now));
 }
 
 /** What core extracts from a thrown value, by shape only. */
