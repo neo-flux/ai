@@ -218,6 +218,39 @@ describe("streamText: fallback", () => {
     expect(a.calls).toHaveLength(1);
   });
 
+  test("a retryable AIError thrown after a caller abort does not fall back", async () => {
+    const controller = new AbortController();
+    const a = fakeAdapter(() => {
+      controller.abort();
+      return { throwBefore: new AIError({ code: "rate_limit" }) };
+    });
+    const b = fakeAdapter([ok("b")]);
+    const seen: boolean[] = [];
+    const s = streamText({
+      model: [a("a"), b("b")],
+      messages,
+      signal: controller.signal,
+      hooks: { onError: (_e, ctx) => void seen.push(ctx.willFallback) },
+    });
+    await s.result.catch(() => {});
+    expect(seen).toEqual([false]);
+    expect(b.calls).toHaveLength(0);
+  });
+
+  test("an abort between attempts stops the chain before the next call", async () => {
+    const controller = new AbortController();
+    const a = fakeAdapter([{ throwBefore: rateLimited }]);
+    const b = fakeAdapter([ok("b")]);
+    const s = streamText({
+      model: [a("a"), b("b")],
+      messages,
+      signal: controller.signal,
+      hooks: { onError: () => controller.abort() },
+    });
+    await expect(s.result).rejects.toMatchObject({ code: "aborted" });
+    expect(b.calls).toHaveLength(0);
+  });
+
   test("a single model works without an array", async () => {
     const fake = fakeAdapter([ok("x")]);
     expect((await streamText({ model: fake("m"), messages }).result).text).toBe("x");
@@ -572,6 +605,24 @@ describe("streamText: lifecycle", () => {
     expect((events[0] as { error: AIError }).error.code).toBe("aborted");
     expect(returned).toBe(1);
   });
+
+  test("a stuck async generator adapter can't hang the stream either", async () => {
+    const adapter: Adapter = {
+      provider: "stuck",
+      async *stream() {
+        await new Promise(() => {});
+      },
+    };
+    const controller = new AbortController();
+    const s = streamText({
+      model: defineProvider(adapter)("m"),
+      messages,
+      signal: controller.signal,
+    });
+    setTimeout(() => controller.abort(), 10);
+    const events = await collect(s);
+    expect(events.map((e) => e.type)).toEqual(["error"]);
+  }, 2000);
 
   test("a caller abort mid-stream ends with one aborted error event", async () => {
     const controller = new AbortController();
