@@ -484,7 +484,7 @@ describe("workflowsDiffer", () => {
     "      - run: bun test",
   ].join("\n");
   const forgejo = github
-    .replace("runs-on: ubuntu-24.04", "runs-on: docker # TODO: confirm")
+    .replace("runs-on: ubuntu-24.04", "runs-on: docker # self-hosted")
     .replace("uses: actions/", "uses: https://github.com/actions/");
 
   test("treats runs-on and the full GitHub URL prefix as equal", () => {
