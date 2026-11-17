@@ -285,6 +285,74 @@ describe("streamText: fallback", () => {
   });
 });
 
+describe("streamText: failover", () => {
+  const failing = (classification: {
+    code: AIErrorCode;
+    retryable?: boolean;
+    failover?: boolean;
+  }) =>
+    defineProvider({
+      provider: "custom",
+      // biome-ignore lint/correctness/useYield: fails before any event
+      async *stream() {
+        throw { status: 402 };
+      },
+      classifyError: () => classification,
+    })("a");
+
+  test("auth is not retryable but fails over to the next model", async () => {
+    const a = fakeAdapter([{ throwBefore: { status: 401 } }]);
+    const b = fakeAdapter([ok("from b")]);
+    const r = await streamText({ model: [a("a"), b("b")], messages }).result;
+    expect(r.text).toBe("from b");
+    expect(b.calls).toHaveLength(1);
+  });
+
+  test("billing fails over to the next model", async () => {
+    const b = fakeAdapter([ok("from b")]);
+    const seen: [AIErrorCode, boolean, boolean][] = [];
+    const r = await streamText({
+      model: [failing({ code: "billing" }), b("b")],
+      messages,
+      hooks: { onError: (e, ctx) => void seen.push([e.code, e.retryable, ctx.willFallback]) },
+    }).result;
+    expect(r.text).toBe("from b");
+    expect(seen).toEqual([["billing", false, true]]);
+  });
+
+  test("a retryable error classified with failover false stops the chain", async () => {
+    const b = fakeAdapter([ok("from b")]);
+    const seen: boolean[] = [];
+    const s = streamText({
+      model: [failing({ code: "provider_unavailable", failover: false }), b("b")],
+      messages,
+      hooks: { onError: (_e, ctx) => void seen.push(ctx.willFallback) },
+    });
+    await expect(s.result).rejects.toMatchObject({ code: "provider_unavailable", retryable: true });
+    expect(seen).toEqual([false]);
+    expect(b.calls).toHaveLength(0);
+  });
+
+  test("a non-retryable error classified with failover true moves on", async () => {
+    const b = fakeAdapter([ok("from b")]);
+    const r = await streamText({
+      model: [failing({ code: "unknown", failover: true }), b("b")],
+      messages,
+    }).result;
+    expect(r.modelRef.id).toBe("b");
+  });
+
+  test("a failover error after the first event becomes an error event, no switch", async () => {
+    const a = fakeAdapter([
+      { events: [text("par"), finish], throwAfter: { index: 1, error: { status: 401 } } },
+    ]);
+    const b = fakeAdapter([ok("from b")]);
+    const events = await collect(streamText({ model: [a("a"), b("b")], messages }));
+    expect(events.map((e) => e.type)).toEqual(["text-delta", "error"]);
+    expect(b.calls).toHaveLength(0);
+  });
+});
+
 describe("streamText: adapter misbehaviour", () => {
   test("out-of-order events become an unknown error", async () => {
     const fake = fakeAdapter([{ events: [finish, text("late")] }]);
@@ -648,7 +716,11 @@ describe("streamText: lifecycle", () => {
     const a = fakeAdapter([{ events: [text("a"), finish], delayMs: 200 }]);
     const b = fakeAdapter([ok("b")]);
     const s = streamText({ model: [a("a"), b("b")], messages, signal: AbortSignal.timeout(10) });
-    await expect(s.result).rejects.toMatchObject({ code: "timeout", retryable: false });
+    await expect(s.result).rejects.toMatchObject({
+      code: "timeout",
+      retryable: false,
+      failover: false,
+    });
     expect(b.calls).toHaveLength(0);
   });
 

@@ -43,6 +43,12 @@ describe("generate", () => {
     expect((await generate({ model: [a("a"), b("b")], messages })).modelRef.id).toBe("b");
   });
 
+  test("fails over on auth like streamText", async () => {
+    const a = fakeAdapter([{ throwBefore: { status: 401 } }]);
+    const b = fakeAdapter([answer("b")]);
+    expect((await generate({ model: [a("a"), b("b")], messages })).modelRef.id).toBe("b");
+  });
+
   test("hook errors propagate unchanged", async () => {
     const thrown = { mine: true };
     const fake = fakeAdapter([answer("x")]);
@@ -215,6 +221,15 @@ describe("generate: structured output", () => {
     });
     expect(kinds).toEqual(["initial", "repair"]);
     expect(r.cost).toBe(4);
+  });
+
+  test("a repair failing with a failover error does not move to the next model", async () => {
+    const a = fakeAdapter([answer("bad"), { throwBefore: { status: 401 } }]);
+    const b = fakeAdapter([answer('{"name":"A","population":1}')]);
+    await expect(
+      generate({ model: [a("a"), b("b")], messages, output: city }),
+    ).rejects.toMatchObject({ code: "auth", failover: true });
+    expect(b.calls).toHaveLength(0);
   });
 
   test("a failing repair request throws its own AIError", async () => {

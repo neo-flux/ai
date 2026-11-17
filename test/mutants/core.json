@@ -387,16 +387,16 @@
   {
     "id": "C56",
     "file": "src/run.ts",
-    "description": "fallback ignores retryable",
-    "find": "= error.retryable && !delivered",
+    "description": "fallback ignores failover",
+    "find": "= error.failover && !delivered",
     "replace": "= !delivered"
   },
   {
     "id": "C57",
     "file": "src/run.ts",
     "description": "fallback after the first delivered event",
-    "find": "error.retryable && !delivered && i <",
-    "replace": "error.retryable && i <"
+    "find": "error.failover && !delivered && i <",
+    "replace": "error.failover && i <"
   },
   {
     "id": "C58",
@@ -887,5 +887,12 @@
     "description": "aborted failover can be overridden",
     "find": "options.code === \"aborted\" ? false : (options.failover",
     "replace": "(options.failover"
+  },
+  {
+    "id": "F1",
+    "file": "src/run.ts",
+    "description": "fallback reads retryable instead of failover",
+    "find": "= error.failover && !delivered",
+    "replace": "= error.retryable && !delivered"
   }
 ]
