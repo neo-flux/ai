@@ -24,6 +24,12 @@ export interface AIErrorOptions {
   /** output_validation only: the model's last raw text. Never part of message or JSON. */
   rawText?: string | undefined;
   issues?: readonly StandardSchemaV1Issue[] | undefined;
+  /**
+   * The raw error from the provider or SDK. Kept out of the error object entirely, so logging,
+   * `util.inspect`, JSON and `toString()` can't print it. Read it with `getProviderError()`.
+   */
+  providerError?: unknown;
+  /** Library-made errors only (rule violations, invalid-request reasons). Never provider data. */
   cause?: unknown;
 }
 
@@ -40,6 +46,18 @@ export interface AIErrorJSON {
 
 // Shared across duplicate copies of this package, unlike the class itself.
 const BRAND: symbol = Symbol.for("neoflux.ai.error");
+
+// Raw provider errors live here, not on the AIError: Node's inspect prints `cause` and other
+// non-enumerable properties, so nothing provider-made may be reachable from the object itself.
+const providerErrors = new WeakMap<object, unknown>();
+
+/**
+ * The raw provider or SDK error behind an `AIError`, if there was one. It may contain anything the
+ * provider sent back, including echoes of the request, so log it deliberately.
+ */
+export function getProviderError(error: AIError): unknown {
+  return providerErrors.get(error);
+}
 
 const RETRYABLE: Record<AIErrorCode, boolean> = {
   rate_limit: true,
@@ -100,10 +118,8 @@ export class AIError extends Error {
     this.providerCode = identifier(options.providerCode);
     this.providerType = identifier(options.providerType);
     this.retryAfterMs = options.retryAfterMs;
+    if ("providerError" in options) providerErrors.set(this, options.providerError);
     // Content-bearing fields stay off enumeration so logging and spreading can't leak them.
-    // `cause` is the standard non-enumerable property, but util.inspect and console.log still
-    // print it, and an SDK error can carry provider messages that echo prompt text.
-    // TODO: confirm whether `cause` should be hidden from inspect or kept and documented.
     Object.defineProperty(this, "rawText", { value: options.rawText, enumerable: false });
     Object.defineProperty(this, "issues", { value: options.issues, enumerable: false });
     Object.defineProperty(this, BRAND, { value: true, enumerable: false });
@@ -217,7 +233,7 @@ export function toAIError(error: unknown, options: ToAIErrorOptions): AIError {
       code: timedOut ? "timeout" : "aborted",
       retryable: false,
       provider,
-      cause: error,
+      providerError: error,
     });
   }
   const shape = errorShape(error);
@@ -227,7 +243,7 @@ export function toAIError(error: unknown, options: ToAIErrorOptions): AIError {
     providerCode: shape.code,
     providerType: shape.type,
     retryAfterMs: parseRetryAfter(shape.headers, options.now),
-    cause: error,
+    providerError: error,
   };
   const classified = options.classify?.(shape, error);
   if (classified !== undefined) return new AIError({ ...common, ...classified });

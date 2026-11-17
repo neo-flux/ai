@@ -3,6 +3,7 @@ import { inspect } from "node:util";
 import {
   AIError,
   type AIErrorCode,
+  getProviderError,
   isAIError,
   parseRetryAfter,
   toAIError,
@@ -122,7 +123,35 @@ describe("AIError", () => {
     );
   });
 
-  test("keeps cause for debugging", () => {
+  test("a provider error is reachable only through getProviderError", () => {
+    const prompt = "PROMPT: summarise the attached contract for SECRET-KEY-123";
+    const sdkError = Object.assign(new Error(`400 Bad request: ${prompt}`), {
+      status: 400,
+      error: { type: "invalid_request_error", message: prompt },
+      headers: { "x-request-id": "req_1", "x-echo": prompt },
+    });
+    const err = toAIError(sdkError, { provider: "openai" });
+    for (const output of [
+      inspect(err),
+      inspect(err, { showHidden: true, depth: 10 }),
+      JSON.stringify(err),
+      String(err),
+      err.message,
+      String(err.stack),
+    ]) {
+      expect(output).not.toContain("PROMPT:");
+      expect(output).not.toContain("SECRET-KEY-123");
+    }
+    expect(getProviderError(err)).toBe(sdkError);
+    expect(err.status).toBe(400);
+  });
+
+  test("getProviderError is undefined when there was none", () => {
+    expect(getProviderError(new AIError({ code: "auth" }))).toBeUndefined();
+    expect(getProviderError(new AIError({ code: "auth", cause: new Error("x") }))).toBeUndefined();
+  });
+
+  test("keeps a library cause for debugging", () => {
     const cause = new Error("x");
     expect(new AIError({ code: "unknown", cause }).cause).toBe(cause);
     expect("cause" in new AIError({ code: "unknown" })).toBe(false);
@@ -286,9 +315,12 @@ describe("toAIError", () => {
   test("a caller abort wins over everything and is never retryable", () => {
     const controller = new AbortController();
     controller.abort();
-    const err = toAIError(http(429), { provider, signal: controller.signal });
+    const thrown = http(429, { message: "PROMPT: echoed" });
+    const err = toAIError(thrown, { provider, signal: controller.signal });
     expect(err.code).toBe("aborted");
     expect(err.retryable).toBe(false);
+    expect(getProviderError(err)).toBe(thrown);
+    expect(inspect(err, { showHidden: true })).not.toContain("PROMPT:");
   });
 
   test("a caller timeout signal is a non-retryable timeout", async () => {
@@ -320,7 +352,8 @@ describe("toAIError", () => {
       const err = toAIError(value, { provider });
       expect(err.code).toBe("unknown");
       expect(err.retryable).toBe(false);
-      expect(err.cause).toBe(value);
+      expect(getProviderError(err)).toBe(value);
+      expect("cause" in err).toBe(false);
     }
   });
 

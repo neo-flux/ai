@@ -782,5 +782,26 @@
     "description": "result resolves after a failed held finish",
     "find": "  if (outcome.error !== undefined) throw outcome.error;\n",
     "replace": ""
+  },
+  {
+    "id": "C113",
+    "file": "src/errors.ts",
+    "description": "provider error stored as cause",
+    "find": "    providerError: error,\n  };",
+    "replace": "    cause: error,\n  };"
+  },
+  {
+    "id": "C114",
+    "file": "src/errors.ts",
+    "description": "aborted provider error stored as cause",
+    "find": "      provider,\n      providerError: error,\n    });",
+    "replace": "      provider,\n      cause: error,\n    });"
+  },
+  {
+    "id": "C115",
+    "file": "src/errors.ts",
+    "description": "provider error not recorded",
+    "find": "    if (\"providerError\" in options) providerErrors.set(this, options.providerError);\n",
+    "replace": ""
   }
 ]

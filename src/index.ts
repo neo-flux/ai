@@ -16,6 +16,7 @@ export {
   type AIErrorOptions,
   type Classification,
   type ErrorShape,
+  getProviderError,
   isAIError,
 } from "./errors.ts";
 export type {
