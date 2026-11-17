@@ -1,4 +1,5 @@
 import type { ModelRef } from "./adapter.ts";
+import { AIError } from "./errors.ts";
 import type { FinishReason, StreamEvent } from "./events.ts";
 import type { AssistantMessage } from "./messages.ts";
 import { type CallOptions, execute, type Outcome, type RunInternal } from "./run.ts";
@@ -37,7 +38,7 @@ export async function toTextResult<T extends Tools>(
 ): Promise<TextResult<T>> {
   const folded = outcome.folded;
   if (folded === undefined || outcome.modelRef === undefined || folded.finishReason === undefined) {
-    throw outcome.error;
+    throw outcome.error ?? new AIError({ code: "unknown" });
   }
   const message: AssistantMessage = { role: "assistant", content: folded.content };
   if (folded.providerMetadata !== undefined) message.providerMetadata = folded.providerMetadata;
