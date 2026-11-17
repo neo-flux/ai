@@ -25,6 +25,16 @@ The repair request sends the model's previous answer and the validator's message
 
 Structured output is available on `generate` only, not `streamText`. A repair attempt is a second request, and streaming it would show you two answers one after the other.
 
+## Recording fixtures
+
+Adapter tests replay recorded provider streams. To re-record them you need provider accounts. See [docs/fixtures.md](docs/fixtures.md). Example values for the base URL variables:
+
+```sh
+NEOFLUX_AI_DEEPSEEK_BASE_URL=https://api.deepseek.com
+NEOFLUX_AI_QWEN_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+NEOFLUX_AI_QWEN_MODELS_URL=https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/api/v1/models
+```
+
 ## License
 
 Apache 2.0
