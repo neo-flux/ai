@@ -1,3 +1,5 @@
+import { AIError } from "./errors.ts";
+
 /** Normalized token usage. `undefined` means the provider didn't report it, never 0. */
 export interface Usage {
   /** All input tokens, including cache reads and cache writes. */
@@ -60,9 +62,10 @@ export function mergeUsage(previous: UsageReport | undefined, next: UsageReport)
 const plus = (total: number | undefined, ...parts: (number | undefined)[]): number | undefined =>
   total === undefined ? undefined : parts.reduce<number>((sum, part) => sum + (part ?? 0), total);
 
+/** Throws `unknown` if a normalized total is no longer a safe integer (an adapter bug). */
 export function normalizeUsage(report: UsageReport | undefined): Usage {
   if (report === undefined) return { ...EMPTY_USAGE };
-  return {
+  const usage: Usage = {
     inputTokens: report.inputIncludesCached
       ? report.inputTokens
       : plus(report.inputTokens, report.cachedInputTokens, report.cacheWriteTokens),
@@ -73,6 +76,16 @@ export function normalizeUsage(report: UsageReport | undefined): Usage {
     cacheWriteTokens: report.cacheWriteTokens,
     reasoningTokens: report.reasoningTokens,
   };
+  for (const field of USAGE_FIELDS) {
+    const value = usage[field];
+    if (value !== undefined && !Number.isSafeInteger(value)) {
+      throw new AIError({
+        code: "unknown",
+        cause: new RangeError(`${field} is not a safe integer`),
+      });
+    }
+  }
+  return usage;
 }
 
 /** Field-wise sum. Unknown in either addend makes that field unknown: a partial sum under-reports. */

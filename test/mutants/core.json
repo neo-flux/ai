@@ -679,6 +679,13 @@
     "replace": "kind: internal.kind, signal: options.signal ?? signal };"
   },
   {
+    "id": "C110",
+    "file": "src/usage.ts",
+    "description": "usage overflow accepted",
+    "find": "    if (value !== undefined && !Number.isSafeInteger(value)) {",
+    "replace": "    if (false) {"
+  },
+  {
     "id": "C111",
     "file": "src/errors.ts",
     "description": "huge retry-after passed through",

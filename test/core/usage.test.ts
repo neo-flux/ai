@@ -135,6 +135,20 @@ describe("normalizeUsage", () => {
   });
 });
 
+describe("normalizeUsage overflow", () => {
+  test("a total that is no longer a safe integer throws unknown", () => {
+    const big = Number.MAX_SAFE_INTEGER;
+    expect(() =>
+      normalizeUsage({
+        inputIncludesCached: false,
+        outputIncludesReasoning: true,
+        inputTokens: big,
+        cachedInputTokens: big,
+      }),
+    ).toThrow(expect.objectContaining({ code: "unknown" }));
+  });
+});
+
 describe("sumUsage", () => {
   test("adds field by field", () => {
     expect(
