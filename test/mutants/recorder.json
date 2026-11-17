@@ -215,5 +215,103 @@
     "description": "model list read to the end",
     "find": "    if (missing.size === 0) break;\n",
     "replace": ""
+  },
+  {
+    "id": "R32",
+    "file": "scripts/recorder/cases.ts",
+    "description": "OpenAI round trip drops reasoning items",
+    "find": "            ...(output as unknown as InputItem[]),\n",
+    "replace": ""
+  },
+  {
+    "id": "R33",
+    "file": "scripts/recorder/cases.ts",
+    "description": "OpenAI tool round trip keeps the forced tool on turn 2",
+    "find": "          tools: [OPENAI_TOOL],\n          input: [{ role: \"user\", content: PROMPTS.tool }, ...calls, functionCallOutput(output)],",
+    "replace": "          tools: [OPENAI_TOOL],\n          tool_choice: { type: \"function\", name: WEATHER.name },\n          input: [{ role: \"user\", content: PROMPTS.tool }, ...calls, functionCallOutput(output)],"
+  },
+  {
+    "id": "R34",
+    "file": "scripts/recorder/cases.ts",
+    "description": "Anthropic signature dropped",
+    "find": "      if (delta.type === \"signature_delta\") block.signature = delta.signature;\n",
+    "replace": ""
+  },
+  {
+    "id": "R35",
+    "file": "scripts/recorder/cases.ts",
+    "description": "Anthropic tool input not parsed from partial JSON",
+    "find": "      if (block?.type === \"tool_use\" && json[index] !== \"\")",
+    "replace": "      if (false)"
+  },
+  {
+    "id": "R36",
+    "file": "scripts/recorder/cases.ts",
+    "description": "Anthropic assistant content left out",
+    "find": "      { role: \"assistant\", content: blocks },\n",
+    "replace": ""
+  },
+  {
+    "id": "R37",
+    "file": "scripts/recorder/cases.ts",
+    "description": "DeepSeek turn 2 drops reasoning_content",
+    "find": "  if (withReasoning) message.reasoning_content = reasoning;",
+    "replace": "  if (false) message.reasoning_content = reasoning;"
+  },
+  {
+    "id": "R38",
+    "file": "scripts/recorder/cases.ts",
+    "description": "error-reasoning-missing keeps reasoning",
+    "find": "roundTrip(\"error-reasoning-missing\", false)",
+    "replace": "roundTrip(\"error-reasoning-missing\", true)"
+  },
+  {
+    "id": "R39",
+    "file": "scripts/recorder/cases.ts",
+    "description": "tool call arguments not concatenated",
+    "find": "        if (typeof fn.arguments === \"string\") target.function.arguments += fn.arguments;",
+    "replace": "        if (typeof fn.arguments === \"string\") target.function.arguments = fn.arguments;"
+  },
+  {
+    "id": "R40",
+    "file": "scripts/recorder/cases.ts",
+    "description": "Qwen round trip doesn't preserve thinking",
+    "find": "  roundTrip: { preserve_thinking: true },",
+    "replace": "  roundTrip: {},"
+  },
+  {
+    "id": "R41",
+    "file": "scripts/recorder/cases.ts",
+    "description": "DeepSeek structured asks for json_schema",
+    "find": "    params: { response_format: { type: \"json_object\" } },",
+    "replace": "    params: { response_format: { type: \"json_schema\" } },"
+  },
+  {
+    "id": "R42",
+    "file": "scripts/recorder/cases.ts",
+    "description": "abort after a different chunk count",
+    "find": "      call(responses(model, PROMPTS.count), { abortAfterChunks: 3 }),",
+    "replace": "      call(responses(model, PROMPTS.count), { abortAfterChunks: 4 }),"
+  },
+  {
+    "id": "R43",
+    "file": "scripts/recorder/cases.ts",
+    "description": "auth case uses the real key",
+    "find": "      call(messages(model, PROMPTS.text), { invalidKey: true }),",
+    "replace": "      call(messages(model, PROMPTS.text)),"
+  },
+  {
+    "id": "R44",
+    "file": "scripts/recorder/cases.ts",
+    "description": "chat usage not requested in the stream",
+    "find": "      stream_options: { include_usage: true },\n",
+    "replace": ""
+  },
+  {
+    "id": "R45",
+    "file": "scripts/recorder/cases.ts",
+    "description": "OpenAI requests stored server-side",
+    "find": "    store: false,\n",
+    "replace": ""
   }
 ]
