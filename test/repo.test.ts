@@ -10,6 +10,7 @@ import {
   checkSourceImports,
   findBannedTerms,
   findRuntimeGlobals,
+  workflowsDiffer,
 } from "../scripts/guards.ts";
 
 // The library must not know who uses it. This file is the only one allowed to name these.
@@ -134,6 +135,17 @@ describe("repository", () => {
       );
       expect({ file, found }).toEqual({ file, found: [] });
     }
+  });
+
+  test("Forgejo and GitHub test workflows match", () => {
+    const github = readFileSync(join(root, ".github/workflows/test.yml"), "utf8");
+    const forgejo = readFileSync(join(root, ".forgejo/workflows/test.yml"), "utf8");
+    expect(workflowsDiffer(github, forgejo)).toBe(false);
+    // Forgejo must not depend on the instance's default actions source.
+    const uses = forgejo.split("\n").filter((line) => /^\s*-?\s*uses:/.test(line));
+    expect(uses.length).toBeGreaterThan(0);
+    for (const line of uses)
+      expect(line).toMatch(/uses:\s*https:\/\/github\.com\/[^@\s]+@[0-9a-f]{40}\b/);
   });
 
   test("no AI tooling files are tracked", () => {
