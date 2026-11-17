@@ -1,0 +1,57 @@
+{
+  "name": "@neoflux/ai",
+  "version": "0.0.0",
+  "description": "Provider-neutral TypeScript library for calling LLMs",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "TODO: confirm"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "bun@1.4.4",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "biome ci .",
+    "format": "biome check --write .",
+    "test": "bun test",
+    "pack:check": "bun scripts/pack-check.ts",
+    "smoke": "bun scripts/smoke.ts",
+    "mutate": "bun scripts/mutate.ts test/mutants/guards.json",
+    "check": "bun run typecheck && bun run lint && bun run test && bun run pack:check && bun run smoke"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/sdk": "^1.0.0",
+    "openai": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@anthropic-ai/sdk": {
+      "optional": true
+    },
+    "openai": {
+      "optional": true
+    }
+  },
+  "trustedDependencies": [],
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@biomejs/biome": "2.6.8",
+    "@types/bun": "1.4.4",
+    "publint": "0.3.25",
+    "typescript": "7.0.2"
+  }
+}
