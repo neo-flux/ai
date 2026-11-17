@@ -334,5 +334,33 @@
     "description": "summarize accepts an empty run",
     "find": "if (results.length === 0) return 1;",
     "replace": ""
+  },
+  {
+    "id": "M49",
+    "file": "scripts/guards.ts",
+    "description": "secrets: npm token not detected",
+    "find": "  [\"npm token\", /\\bnpm_[A-Za-z0-9]{36}\\b/],\n",
+    "replace": ""
+  },
+  {
+    "id": "M50",
+    "file": "scripts/guards.ts",
+    "description": "secrets: private keys not detected",
+    "find": "  [\"private key\", /-----BEGIN [A-Z ]*PRIVATE KEY-----/],\n",
+    "replace": ""
+  },
+  {
+    "id": "M51",
+    "file": "scripts/guards.ts",
+    "description": "secrets: openai key accepts any length",
+    "find": "/\\bsk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{20,}/",
+    "replace": "/\\bsk-(?:proj-|svcacct-)?[A-Za-z0-9_.-]*/"
+  },
+  {
+    "id": "M52",
+    "file": "scripts/guards.ts",
+    "description": "secrets: bearer matches any word",
+    "find": "/\\bBearer\\s+[A-Za-z0-9._~+/-]{20,}/",
+    "replace": "/\\bBearer\\s+\\w+/"
   }
 ]

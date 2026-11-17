@@ -10,6 +10,7 @@ import {
   checkSourceImports,
   findBannedTerms,
   findRuntimeGlobals,
+  findSecrets,
   workflowsDiffer,
 } from "../scripts/guards.ts";
 
@@ -133,6 +134,17 @@ describe("repository", () => {
         `${file}\n${readFileSync(join(root, file), "utf8")}`,
         BANNED_TERMS,
       );
+      expect({ file, found }).toEqual({ file, found: [] });
+    }
+  });
+
+  test("no file contains a credential", () => {
+    const files = git("ls-files", "-z", "--cached", "--others", "--exclude-standard").filter((f) =>
+      existsSync(join(root, f)),
+    );
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      const found = findSecrets(readFileSync(join(root, file), "utf8"));
       expect({ file, found }).toEqual({ file, found: [] });
     }
   });

@@ -7,6 +7,7 @@ import {
   checkSourceImports,
   findBannedTerms,
   findRuntimeGlobals,
+  findSecrets,
   scanSpecifiers,
   workflowsDiffer,
 } from "../scripts/guards.ts";
@@ -510,5 +511,37 @@ describe("workflowsDiffer", () => {
 
   test("detects a missing line", () => {
     expect(workflowsDiffer(github, forgejo.split("\n").slice(0, -1).join("\n"))).toBe(true);
+  });
+});
+
+describe("findSecrets", () => {
+  // Built at runtime so this file never contains a credential-shaped literal.
+  const fill = (n: number): string => "a1B2".repeat(n).slice(0, n);
+  const cases: [string, string][] = [
+    ["anthropic key", `key: "${"sk-"}ant-api03-${fill(40)}"`],
+    ["openai key", `OPENAI_API_KEY=${"sk-"}proj-${fill(40)}`],
+    ["npm token", `token ${"npm"}_${fill(36)}`],
+    ["npm auth config", `//registry.npmjs.org/:${"_auth"}Token=abc`],
+    ["github token", `${"gh"}p_${fill(36)}`],
+    ["github token", `${"github"}_pat_${fill(30)}`],
+    ["aws access key", `${"AK"}IA${"ABCDEFGHIJKLMNOP"}`],
+    ["private key", `${"-----BEGIN"} RSA PRIVATE KEY-----`],
+    ["bearer token", `Authorization: ${"Bearer"} ${fill(30)}`],
+  ];
+  for (const [name, text] of cases) {
+    test(`flags ${name}`, () => {
+      expect(findSecrets(text)).toContain(name);
+    });
+  }
+
+  test("ignores placeholders and prose", () => {
+    const text = [
+      'const apiKey = process.env.OPENAI_API_KEY ?? "sk-...";',
+      "Pass a Bearer token in the Authorization header.",
+      "new Anthropic({ apiKey })",
+      "-----BEGIN PUBLIC KEY-----",
+      "npm_config_registry",
+    ].join("\n");
+    expect(findSecrets(text)).toEqual([]);
   });
 });
