@@ -17,7 +17,9 @@ try {
     join(work, "package.json"),
     JSON.stringify({ private: true, type: "module", dependencies: { "@neoflux/ai": pkg.version } }),
   );
-  copyFileSync(join(root, "test/smoke/smoke.mjs"), join(work, "smoke.mjs"));
+  for (const file of ["smoke.mjs", "check.mjs"]) {
+    copyFileSync(join(root, "test/smoke", file), join(work, file));
+  }
 
   const runtimes: [name: string, args: string[]][] = [
     ["node", ["smoke.mjs"]],
@@ -38,6 +40,25 @@ try {
     if (result.exitCode !== 0) {
       console.error(`failed: ${name} ${args.join(" ")}`);
       ok = false;
+    }
+  }
+
+  // Type stripping is on by default from Node 24 (the CI matrix runs 22 and 24).
+  const node = Bun.which("node");
+  if (node !== null) {
+    const major = Number(run([node, "-p", "process.versions.node.split('.')[0]"]).trim());
+    if (major >= 24) {
+      const result = Bun.spawnSync([node, "test/smoke/strip.mjs"], {
+        cwd: root,
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      if (result.exitCode !== 0) {
+        console.error("failed: node test/smoke/strip.mjs");
+        ok = false;
+      }
+    } else {
+      console.log(`skip: src type-stripping run needs Node 24+, found ${major}`);
     }
   }
 } catch (error) {
