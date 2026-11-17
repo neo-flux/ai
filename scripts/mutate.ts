@@ -1,5 +1,5 @@
 // Applies hand-written mutants one at a time and checks that the test suite catches each.
-// Usage: bun scripts/mutate.ts <mutants.json>
+// Usage: bun scripts/mutate.ts <mutants.json>...
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -43,6 +43,30 @@ export function validateMutants(mutants: unknown): string[] {
   return errors;
 }
 
+/** Parses every mutants file and validates them as one list, so ids are unique across files. */
+export function loadMutants(
+  paths: readonly string[],
+  read: (path: string) => string,
+): { mutants: Mutant[]; errors: string[] } {
+  if (paths.length === 0) return { mutants: [], errors: ["no mutants files"] };
+  const mutants: Mutant[] = [];
+  const errors: string[] = [];
+  for (const path of paths) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(read(path));
+    } catch (error) {
+      errors.push(`${path}: ${(error as Error).message}`);
+      continue;
+    }
+    const own = validateMutants(parsed);
+    if (own.length > 0) errors.push(...own.map((e) => `${path}: ${e}`));
+    else mutants.push(...(parsed as Mutant[]));
+  }
+  if (errors.length === 0) errors.push(...validateMutants(mutants));
+  return { mutants, errors };
+}
+
 export function classify(exitCode: number | null, timedOut: boolean): Result {
   if (timedOut) return "timeout";
   if (exitCode === null) return "error";
@@ -79,11 +103,10 @@ const runTests = (
   return { exitCode: result.exitCode, timedOut: result.exitedDueToTimeout === true };
 };
 
-function main(path: string): number {
-  const mutants = JSON.parse(readFileSync(path, "utf8")) as Mutant[];
-  const errors = validateMutants(mutants);
+function main(paths: readonly string[]): number {
+  const { mutants, errors } = loadMutants(paths, (path) => readFileSync(path, "utf8"));
   if (errors.length > 0) {
-    console.error(`Invalid mutants file:\n${errors.join("\n")}`);
+    console.error(`Invalid mutants:\n${errors.join("\n")}`);
     return 2;
   }
   const files = [...new Set(mutants.map((m) => m.file))];
@@ -147,10 +170,10 @@ function main(path: string): number {
 }
 
 if (import.meta.main) {
-  const path = process.argv[2];
-  if (path === undefined) {
-    console.error("Usage: bun scripts/mutate.ts <mutants.json>");
+  const paths = process.argv.slice(2);
+  if (paths.length === 0) {
+    console.error("Usage: bun scripts/mutate.ts <mutants.json>...");
     process.exit(2);
   }
-  process.exit(main(path));
+  process.exit(main(paths));
 }

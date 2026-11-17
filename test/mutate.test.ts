@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   applyMutant,
   classify,
+  loadMutants,
   MUTATING_ENV,
   type Mutant,
   preflight,
@@ -110,19 +111,64 @@ describe("summarize", () => {
   });
 });
 
-describe("test/mutants/guards.json", () => {
-  const root = join(import.meta.dir, "..");
-  const mutants = JSON.parse(readFileSync(join(root, "test/mutants/guards.json"), "utf8"));
+describe("loadMutants", () => {
+  const a = JSON.stringify([mutant("x", "y")]);
+  const b = JSON.stringify([{ ...mutant("p", "q"), id: "T2" }]);
 
-  test("is a valid, non-trivial mutant list", () => {
-    expect(validateMutants(mutants)).toEqual([]);
-    expect(mutants.length).toBeGreaterThanOrEqual(25);
+  test("concatenates every file", () => {
+    const files: Record<string, string> = { "a.json": a, "b.json": b };
+    const { mutants, errors } = loadMutants(["a.json", "b.json"], (p) => files[p] as string);
+    expect(errors).toEqual([]);
+    expect(mutants.map((m) => m.id)).toEqual(["T1", "T2"]);
+  });
+
+  test("rejects duplicate ids across files", () => {
+    const { errors } = loadMutants(["a.json", "b.json"], () => a);
+    expect(errors).toEqual(["duplicate id T1"]);
+  });
+
+  test("reports which file is invalid", () => {
+    const files: Record<string, string> = { "a.json": a, "bad.json": "[]", "broken.json": "{" };
+    const { errors } = loadMutants(
+      ["a.json", "bad.json", "broken.json"],
+      (p) => files[p] as string,
+    );
+    expect(errors[0]).toBe("bad.json: no mutants");
+    expect(errors[1]).toStartWith("broken.json: ");
+    expect(errors).toHaveLength(2);
+  });
+
+  test("rejects no files", () => {
+    expect(loadMutants([], () => a).errors).toEqual(["no mutants files"]);
+  });
+});
+
+describe("test/mutants", () => {
+  const root = join(import.meta.dir, "..");
+  const files = readdirSync(join(root, "test/mutants"))
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => `test/mutants/${f}`)
+    .sort();
+  const { mutants, errors } = loadMutants(files, (p) => readFileSync(join(root, p), "utf8"));
+
+  test("every file is valid and ids are unique across files", () => {
+    expect(files.length).toBeGreaterThanOrEqual(2);
+    expect(errors).toEqual([]);
+    expect(mutants.length).toBeGreaterThanOrEqual(50);
+  });
+
+  test("bun run mutate runs every file", () => {
+    const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+    const args = String(pkg.scripts.mutate)
+      .split(/\s+/)
+      .filter((a) => a.endsWith(".json"));
+    expect(args.sort()).toEqual(files);
   });
 
   // While a mutant is applied its own find string is gone, which would fail this test and
   // count as a kill for every mutant. So it only runs outside mutation runs.
   test.skipIf(process.env[MUTATING_ENV] === "1")("every mutant applies to the current code", () => {
-    for (const m of mutants as Mutant[]) {
+    for (const m of mutants) {
       expect(() => applyMutant(readFileSync(join(root, m.file), "utf8"), m)).not.toThrow();
     }
   });
