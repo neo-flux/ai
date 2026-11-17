@@ -101,7 +101,7 @@ function main(path: string): number {
     if (active !== undefined) writeFileSync(join(root, active), originals.get(active) as string);
     active = undefined;
   };
-  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP", "SIGQUIT"] as const) {
     process.on(signal, () => {
       restore();
       process.exit(130);
