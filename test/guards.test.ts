@@ -75,6 +75,49 @@ describe("scanSpecifiers", () => {
     );
   });
 
+  const lexerCases: [string, string, string[]][] = [
+    [
+      "regex after return",
+      'function f() { return /from "x"/; }\nimport a from "./a.js";',
+      ["./a.js"],
+    ],
+    ["regex after a block", 'if (a) {}\n/from "q"/.test(s);\nimport b from "./b.js";', ["./b.js"]],
+    [
+      "escaped quote in a string",
+      'const s = "a\\"b from \'y\'";\nimport c from "./c.js";',
+      ["./c.js"],
+    ],
+    [
+      "escaped backtick in a template",
+      'const t = `\\` from "z"`;\nimport d from "./d.js";',
+      ["./d.js"],
+    ],
+    ["block comment separates tokens", 'a/**/import "./e.js";', ["./e.js"]],
+    [
+      "unterminated string stops at newline",
+      'const s = "open\nimport f from "./f.js";',
+      ["./f.js"],
+    ],
+  ];
+  for (const [name, code, expected] of lexerCases) {
+    test(`lexer: ${name}`, () => {
+      expect(specs(code)).toEqual(expected);
+    });
+  }
+
+  test("finds declare module augmentations", () => {
+    expect(specs('declare module "openai" {\n  interface X {}\n}')).toEqual(["openai"]);
+  });
+
+  test("treats a default import named type as a value import", () => {
+    expect(scanSpecifiers('import type from "openai";')).toEqual([
+      { specifier: "openai", typeOnly: false },
+    ]);
+    expect(scanSpecifiers('import type, { OpenAI } from "openai";')).toEqual([
+      { specifier: "openai", typeOnly: false },
+    ]);
+  });
+
   test("marks type-only imports and re-exports", () => {
     const code = [
       'import type { A } from "openai";',
@@ -138,6 +181,12 @@ describe("checkSourceImports", () => {
 
   test("flags type-only imports of non-peers", () => {
     expect(checkSourceImports('import type { Stats } from "node:fs";', peers)).toEqual(["node:fs"]);
+  });
+
+  test("flags import() type positions, which are fail-safe rather than allowed", () => {
+    expect(checkSourceImports('export type T = import("openai").OpenAI;', peers)).toEqual([
+      "openai",
+    ]);
   });
 
   test("flags runtime and builtin specifiers", () => {
@@ -231,6 +280,9 @@ describe("checkDtsGraph", () => {
     "dist/cycle-a.d.ts": 'export * from "./cycle-b.js";',
     "dist/cycle-b.d.ts": 'export * from "./cycle-a.js";\nimport type { Y } from "zod";',
     "dist/broken.d.ts": 'export * from "./missing.js";',
+    "dist/esm.d.ts": 'export * from "./x.mjs";',
+    "dist/x.d.mts": 'import type { Z } from "zod";\nexport declare const z: Z;',
+    "dist/direct.d.ts": 'export * from "./types/msg.d.ts";',
   };
   const read = (path: string): string | undefined => files[path];
 
@@ -252,6 +304,22 @@ describe("checkDtsGraph", () => {
     expect(checkDtsGraph("dist/cycle-a.d.ts", read, [])).toEqual([
       { file: "dist/cycle-b.d.ts", specifier: "zod" },
     ]);
+  });
+
+  test("reports a missing entry", () => {
+    expect(checkDtsGraph("dist/none.d.ts", read, [])).toEqual([
+      { file: "dist/none.d.ts", specifier: "(missing)" },
+    ]);
+  });
+
+  test("follows .mjs imports to .d.mts", () => {
+    expect(checkDtsGraph("dist/esm.d.ts", read, [])).toEqual([
+      { file: "dist/x.d.mts", specifier: "zod" },
+    ]);
+  });
+
+  test("follows explicit .d.ts imports", () => {
+    expect(checkDtsGraph("dist/direct.d.ts", read, [])).toEqual([]);
   });
 
   test("reports an unresolvable relative import", () => {
@@ -325,6 +393,14 @@ describe("checkManifest", () => {
       (m) => (m.exports = { ".": { default: "./dist/index.js", types: "./dist/index.d.ts" } }),
     ],
     ["exports[.]: missing default", (m) => (m.exports = { ".": { types: "./dist/index.d.ts" } })],
+    ["exports[.]: missing types", (m) => (m.exports = { ".": { default: "./dist/index.js" } })],
+    [
+      "exports[.]: unexpected condition node",
+      (m) =>
+        (m.exports = {
+          ".": { types: "./dist/index.d.ts", node: "./dist/node.js", default: "./dist/index.js" },
+        }),
+    ],
     [
       "exports[.]: types must be ./dist/**.d.ts",
       (m) => (m.exports = { ".": { types: "./src/index.ts", default: "./dist/index.js" } }),
@@ -353,6 +429,15 @@ describe("checkManifest", () => {
     "postpack",
     "publish",
     "postpublish",
+    "preuninstall",
+    "uninstall",
+    "postuninstall",
+    "preprepare",
+    "postprepare",
+    "preversion",
+    "version",
+    "postversion",
+    "dependencies",
   ]) {
     test(`flags lifecycle script: ${script}`, () => {
       const m = validManifest();
@@ -411,6 +496,16 @@ describe("workflowsDiffer", () => {
 
   test("detects a different action SHA", () => {
     expect(workflowsDiffer(github, forgejo.replace("@abc", "@def"))).toBe(true);
+  });
+
+  test("detects a full URL on a host other than github.com", () => {
+    expect(
+      workflowsDiffer(github, forgejo.replace("https://github.com/", "https://evil.example/")),
+    ).toBe(true);
+  });
+
+  test("ignores trailing newlines", () => {
+    expect(workflowsDiffer(github, `${forgejo}\n\n`)).toBe(false);
   });
 
   test("detects a missing line", () => {

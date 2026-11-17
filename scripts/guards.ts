@@ -144,6 +144,8 @@ const SPECIFIER_PATTERNS: { pattern: RegExp; statement: boolean }[] = [
   { pattern: /\bimport\s*"#(\d+)"/g, statement: false },
   { pattern: /\bimport\s*\(\s*"#(\d+)"\s*\)/g, statement: false },
   { pattern: /\brequire\s*\(\s*"#(\d+)"\s*\)/g, statement: false },
+  // declare module "x" augmentations force consumers to resolve x.
+  { pattern: /\bmodule\s*"#(\d+)"/g, statement: false },
   { pattern: new RegExp(`${REFERENCE}"#(\\d+)"`, "g"), statement: false },
 ];
 
@@ -289,6 +291,10 @@ const LIFECYCLE_SCRIPTS = [
   "postpack",
   "publish",
   "postpublish",
+  "preversion",
+  "version",
+  "postversion",
+  "dependencies",
 ];
 const EXACT_VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 
@@ -330,6 +336,11 @@ export function checkManifest(pkg: Record<string, unknown>): string[] {
     for (const [subpath, value] of Object.entries(exportsField)) {
       const entry = record(value);
       const at = `exports[${subpath}]`;
+      for (const condition of Object.keys(entry)) {
+        if (condition !== "types" && condition !== "default") {
+          v.push(`${at}: unexpected condition ${condition}`);
+        }
+      }
       if (Object.keys(entry)[0] !== "types") v.push(`${at}: types must be the first condition`);
       if (entry.types === undefined) v.push(`${at}: missing types`);
       else if (!/^\.\/dist\/.+\.d\.ts$/.test(String(entry.types))) {
