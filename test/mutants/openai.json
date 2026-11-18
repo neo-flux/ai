@@ -1,0 +1,408 @@
+[
+  {
+    "id": "O1",
+    "file": "src/openai/request.ts",
+    "description": "system messages not joined into instructions",
+    "find": "  if (system.length > 0) params.instructions = system.join(\"\\n\\n\");\n",
+    "replace": ""
+  },
+  {
+    "id": "O2",
+    "file": "src/openai/request.ts",
+    "description": "instructions joined without a blank line",
+    "find": "system.join(\"\\n\\n\")",
+    "replace": "system.join(\"\")"
+  },
+  {
+    "id": "O3",
+    "file": "src/openai/request.ts",
+    "description": "own item check reads inherited keys",
+    "find": "if (metadata === undefined || !Object.hasOwn(metadata, PROVIDER)) return undefined;",
+    "replace": "if (metadata === undefined) return undefined;"
+  },
+  {
+    "id": "O4",
+    "file": "src/openai/request.ts",
+    "description": "reasoning item not sent back",
+    "find": "      if (item !== undefined) items.push(item);\n    } else if",
+    "replace": "    } else if"
+  },
+  {
+    "id": "O5",
+    "file": "src/openai/request.ts",
+    "description": "tool call item not used verbatim",
+    "find": "    } else if (item !== undefined) {\n      items.push(item);\n    } else {",
+    "replace": "    } else {"
+  },
+  {
+    "id": "O6",
+    "file": "src/openai/request.ts",
+    "description": "assistant text not flushed before an item",
+    "find": "    flush();\n    const item = ownItem(part.providerMetadata);",
+    "replace": "    const item = ownItem(part.providerMetadata);"
+  },
+  {
+    "id": "O7",
+    "file": "src/openai/request.ts",
+    "description": "trailing assistant text dropped",
+    "find": "  flush();\n  return items;",
+    "replace": "  return items;"
+  },
+  {
+    "id": "O8",
+    "file": "src/openai/request.ts",
+    "description": "tool output not sent",
+    "find": "      return [{ type: \"function_call_output\", call_id: m.toolCallId, output: m.content }];",
+    "replace": "      return [];"
+  },
+  {
+    "id": "O9",
+    "file": "src/openai/request.ts",
+    "description": "function_call arguments not stringified",
+    "find": "typeof part.input === \"string\" ? part.input : JSON.stringify(part.input)",
+    "replace": "part.input as string"
+  },
+  {
+    "id": "O10",
+    "file": "src/openai/request.ts",
+    "description": "image detail missing",
+    "find": "      return { type: \"input_image\", image_url: url, detail: \"auto\" };",
+    "replace": "      return { type: \"input_image\", image_url: url };"
+  },
+  {
+    "id": "O11",
+    "file": "src/openai/request.ts",
+    "description": "file name dropped",
+    "find": "      if (part.filename !== undefined) file.filename = part.filename;\n",
+    "replace": ""
+  },
+  {
+    "id": "O12",
+    "file": "src/openai/request.ts",
+    "description": "image without mediaType accepted",
+    "find": "      if (part.mediaType === undefined || part.mediaType === \"\") {",
+    "replace": "      if (false) {"
+  },
+  {
+    "id": "O13",
+    "file": "src/openai/request.ts",
+    "description": "tools always strict",
+    "find": "      fn.strict = strict;",
+    "replace": "      fn.strict = true;"
+  },
+  {
+    "id": "O14",
+    "file": "src/openai/request.ts",
+    "description": "strictSchemas ignored for tools",
+    "find": "      fn.strict = strict;",
+    "replace": "      fn.strict = false;"
+  },
+  {
+    "id": "O15",
+    "file": "src/openai/request.ts",
+    "description": "output format strict always",
+    "find": "    if (strict) format.strict = true;",
+    "replace": "    format.strict = true;"
+  },
+  {
+    "id": "O16",
+    "file": "src/openai/request.ts",
+    "description": "output $schema kept",
+    "find": "      schema: withoutSchemaKey(request.output.schema),",
+    "replace": "      schema: request.output.schema,"
+  },
+  {
+    "id": "O17",
+    "file": "src/openai/request.ts",
+    "description": "tool choice name sent bare",
+    "find": "typeof choice === \"string\" ? choice : { type: \"function\", name: choice.name }",
+    "replace": "typeof choice === \"string\" ? choice : choice.name"
+  },
+  {
+    "id": "O18",
+    "file": "src/openai/request.ts",
+    "description": "max_output_tokens dropped",
+    "find": "  if (request.maxOutputTokens !== undefined) params.max_output_tokens = request.maxOutputTokens;\n",
+    "replace": ""
+  },
+  {
+    "id": "O19",
+    "file": "src/openai/request.ts",
+    "description": "store defaults to true",
+    "find": "typeof options.store === \"boolean\" ? options.store : false;",
+    "replace": "typeof options.store === \"boolean\" ? options.store : true;"
+  },
+  {
+    "id": "O20",
+    "file": "src/openai/request.ts",
+    "description": "store option ignored",
+    "find": "typeof options.store === \"boolean\" ? options.store : false;",
+    "replace": "false;"
+  },
+  {
+    "id": "O21",
+    "file": "src/openai/request.ts",
+    "description": "reasoning option dropped",
+    "find": "  if (options.reasoning !== undefined) params.reasoning = options.reasoning;\n",
+    "replace": ""
+  },
+  {
+    "id": "O22",
+    "file": "src/openai/request.ts",
+    "description": "encrypted content not included by default",
+    "find": "    params.include = [\"reasoning.encrypted_content\"];",
+    "replace": "    params.include = [];"
+  },
+  {
+    "id": "O23",
+    "file": "src/openai/request.ts",
+    "description": "include added even when stored",
+    "find": "options.reasoning !== undefined && params.store === false",
+    "replace": "options.reasoning !== undefined"
+  },
+  {
+    "id": "O24",
+    "file": "src/openai/request.ts",
+    "description": "include option ignored",
+    "find": "  if (Array.isArray(options.include)) {",
+    "replace": "  if (false) {"
+  },
+  {
+    "id": "O25",
+    "file": "src/openai/request.ts",
+    "description": "reserved body keys accepted",
+    "find": "    if (RESERVED_KEYS.includes(key)) throw invalid(PROVIDER, `body may not set \"${key}\"`);\n",
+    "replace": ""
+  },
+  {
+    "id": "O26",
+    "file": "src/openai/request.ts",
+    "description": "body overrides typed store",
+    "find": "  params.store = typeof options.store",
+    "replace": "  params.store ??= typeof options.store"
+  },
+  {
+    "id": "O27",
+    "file": "src/openai/stream.ts",
+    "description": "empty text deltas emitted",
+    "find": "        const delta = nonEmpty(event.delta);\n        if (delta !== undefined) {\n          this.#blockOpen = false;",
+    "replace": "        const delta = event.delta as string;\n        if (delta !== undefined) {\n          this.#blockOpen = false;"
+  },
+  {
+    "id": "O28",
+    "file": "src/openai/stream.ts",
+    "description": "refusal ignored",
+    "find": "      case \"response.refusal.delta\": {",
+    "replace": "      case \"response.refusal.ignored\": {"
+  },
+  {
+    "id": "O29",
+    "file": "src/openai/stream.ts",
+    "description": "raw reasoning text ignored",
+    "find": "      case \"response.reasoning_text.delta\":\n",
+    "replace": ""
+  },
+  {
+    "id": "O30",
+    "file": "src/openai/stream.ts",
+    "description": "no blank line between summary parts",
+    "find": "r.emitted && index !== undefined && r.summaryIndex !== index ? \"\\n\\n\" : \"\"",
+    "replace": "\"\""
+  },
+  {
+    "id": "O31",
+    "file": "src/openai/stream.ts",
+    "description": "empty reasoning item gets no opening delta",
+    "find": "        out.push({ type: \"reasoning-delta\", text: \"\" });\n",
+    "replace": ""
+  },
+  {
+    "id": "O32",
+    "file": "src/openai/stream.ts",
+    "description": "reasoning-end without the item",
+    "find": "      out.push({ type: \"reasoning-end\", providerMetadata: { [PROVIDER]: { item } } });",
+    "replace": "      out.push({ type: \"reasoning-end\" });"
+  },
+  {
+    "id": "O33",
+    "file": "src/openai/stream.ts",
+    "description": "text doesn't close the reasoning block",
+    "find": "        if (delta !== undefined) {\n          this.#blockOpen = false;",
+    "replace": "        if (delta !== undefined) {"
+  },
+  {
+    "id": "O34",
+    "file": "src/openai/stream.ts",
+    "description": "tool call id is the item id",
+    "find": "    const callId = nonEmpty(item.call_id);",
+    "replace": "    const callId = nonEmpty(item.id);"
+  },
+  {
+    "id": "O35",
+    "file": "src/openai/stream.ts",
+    "description": "argument deltas ignored",
+    "find": "          out.push({ type: \"tool-call-delta\", id: call.callId, inputDelta: delta });\n        }\n        break;",
+    "replace": "        }\n        break;"
+  },
+  {
+    "id": "O36",
+    "file": "src/openai/stream.ts",
+    "description": "done arguments never emitted",
+    "find": "    if (!call.emitted && args !== undefined) {",
+    "replace": "    if (false) {"
+  },
+  {
+    "id": "O37",
+    "file": "src/openai/stream.ts",
+    "description": "done arguments emitted twice",
+    "find": "    if (!call.emitted && args !== undefined) {",
+    "replace": "    if (args !== undefined) {"
+  },
+  {
+    "id": "O38",
+    "file": "src/openai/stream.ts",
+    "description": "tool-call-end without the item",
+    "find": "      id: call.callId,\n      providerMetadata: { [PROVIDER]: { item } },\n    });",
+    "replace": "      id: call.callId,\n    });"
+  },
+  {
+    "id": "O39",
+    "file": "src/openai/stream.ts",
+    "description": "a call started twice",
+    "find": "    if (existing !== undefined) return existing;\n",
+    "replace": ""
+  },
+  {
+    "id": "O40",
+    "file": "src/openai/stream.ts",
+    "description": "completed with calls reported as stop",
+    "find": "            ? this.#ended > 0\n              ? \"tool-calls\"\n              : \"stop\"",
+    "replace": "            ? \"stop\""
+  },
+  {
+    "id": "O41",
+    "file": "src/openai/stream.ts",
+    "description": "max_output_tokens not length",
+    "find": "  max_output_tokens: \"length\",",
+    "replace": "  max_output_tokens: \"other\","
+  },
+  {
+    "id": "O42",
+    "file": "src/openai/stream.ts",
+    "description": "incomplete reason lookup reads inherited keys",
+    "find": "typeof details.reason === \"string\" && Object.hasOwn(INCOMPLETE, details.reason)",
+    "replace": "typeof details.reason === \"string\" && details.reason in INCOMPLETE"
+  },
+  {
+    "id": "O43",
+    "file": "src/openai/stream.ts",
+    "description": "usage dropped",
+    "find": "    if (usage !== undefined) events.push({ type: \"usage\", usage });\n",
+    "replace": ""
+  },
+  {
+    "id": "O44",
+    "file": "src/openai/stream.ts",
+    "description": "cache writes not mapped",
+    "find": "    cacheWriteTokens: count(input.cache_write_tokens),",
+    "replace": "    cacheWriteTokens: undefined,"
+  },
+  {
+    "id": "O45",
+    "file": "src/openai/stream.ts",
+    "description": "cached tokens not mapped",
+    "find": "    cachedInputTokens: count(input.cached_tokens),",
+    "replace": "    cachedInputTokens: undefined,"
+  },
+  {
+    "id": "O46",
+    "file": "src/openai/stream.ts",
+    "description": "missing terminal treated as stop",
+    "find": "    if (this.#terminal === undefined) {\n      return { events, error: new AIError({ code: \"provider_unavailable\", provider: PROVIDER }) };\n    }",
+    "replace": "    this.#terminal ??= { reason: \"stop\", usage: undefined };"
+  },
+  {
+    "id": "O47",
+    "file": "src/openai/stream.ts",
+    "description": "open calls not ended at the end",
+    "find": "      events.push({ type: \"tool-call-end\", id: call.callId });\n      this.#ended++;",
+    "replace": "      this.#ended++;"
+  },
+  {
+    "id": "O48",
+    "file": "src/openai/stream.ts",
+    "description": "response.failed ignored",
+    "find": "        throw streamError(isRecord(response.error) ? response.error : {});",
+    "replace": "        break;"
+  },
+  {
+    "id": "O49",
+    "file": "src/openai/stream.ts",
+    "description": "error event ignored",
+    "find": "      case \"error\":\n        throw streamError(event);",
+    "replace": "      case \"error\":\n        break;"
+  },
+  {
+    "id": "O50",
+    "file": "src/openai/stream.ts",
+    "description": "stream error code dropped",
+    "find": "    code: typeof body.code === \"string\" ? body.code : undefined,",
+    "replace": "    code: undefined,"
+  },
+  {
+    "id": "O51",
+    "file": "src/openai/stream.ts",
+    "description": "abort after the loop not thrown",
+    "find": "  if (signal.aborted) throw signal.reason;\n",
+    "replace": ""
+  },
+  {
+    "id": "O52",
+    "file": "src/openai/errors.ts",
+    "description": "insufficient_quota not billing",
+    "find": "  insufficient_quota: { code: \"billing\" },",
+    "replace": "  insufficient_quota: { code: \"rate_limit\" },"
+  },
+  {
+    "id": "O53",
+    "file": "src/openai/errors.ts",
+    "description": "429 insufficient_quota left to status",
+    "find": "  if (shape.status === 429 && code === \"insufficient_quota\") return BY_CODE[code];\n",
+    "replace": ""
+  },
+  {
+    "id": "O54",
+    "file": "src/openai/errors.ts",
+    "description": "400 context_length_exceeded left to status",
+    "find": "  if (shape.status === 400 && code === \"context_length_exceeded\") return BY_CODE[code];\n",
+    "replace": ""
+  },
+  {
+    "id": "O55",
+    "file": "src/openai/errors.ts",
+    "description": "codes mapped regardless of status",
+    "find": "  return shape.status === undefined ? BY_CODE[code] : undefined;",
+    "replace": "  return BY_CODE[code];"
+  },
+  {
+    "id": "O56",
+    "file": "src/openai/index.ts",
+    "description": "signal not passed to create()",
+    "find": "        { signal: ctx.signal },",
+    "replace": "        {},"
+  },
+  {
+    "id": "O57",
+    "file": "src/openai/index.ts",
+    "description": "client shape not checked",
+    "find": "  if (typeof create !== \"function\") {",
+    "replace": "  if (false) {"
+  },
+  {
+    "id": "O58",
+    "file": "src/openai/index.ts",
+    "description": "classifyError not wired",
+    "find": "    classifyError: classifyOpenAIError,",
+    "replace": "    classifyError: undefined,"
+  }
+]

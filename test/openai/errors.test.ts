@@ -58,3 +58,10 @@ describe("classifyOpenAIError", () => {
     expect(map(http(500, "server_error", "server_error")).code).toBe("provider_unavailable");
   });
 });
+
+describe("classifyOpenAIError: mutation follow-ups", () => {
+  test("a code that only matters without a status doesn't override the status", () => {
+    expect(map(http(401, "rate_limit_exceeded")).code).toBe("auth");
+    expect(map(http(503, "insufficient_quota")).code).toBe("provider_unavailable");
+  });
+});

@@ -308,3 +308,19 @@ describe("toResponsesParams: tools, output and options", () => {
     });
   });
 });
+
+describe("toResponsesParams: mutation follow-ups", () => {
+  test("metadata that only inherits an openai key is not ours", () => {
+    const inherited = Object.create({ openai: { item } }) as Record<string, unknown>;
+    const out = params({
+      messages: [
+        q,
+        {
+          role: "assistant",
+          content: [{ type: "reasoning", text: "", providerMetadata: inherited }],
+        },
+      ],
+    });
+    expect(out.input).toEqual([{ role: "user", content: "q" }]);
+  });
+});

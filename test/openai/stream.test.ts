@@ -335,3 +335,21 @@ describe("ResponsesTranslator: ordering edge cases", () => {
     ]);
   });
 });
+
+describe("ResponsesTranslator: mutation follow-ups", () => {
+  test("raw reasoning text carries its text", () => {
+    const events = run([
+      added(reasoningItem("rs_1")),
+      { type: "response.reasoning_text.delta", item_id: "rs_1", content_index: 0, delta: "r" },
+      done(reasoningItem("rs_1")),
+      completed(),
+    ]);
+    expect(events[0]).toEqual({ type: "reasoning-delta", text: "r" });
+  });
+
+  test("an incomplete reason named like an Object.prototype member is other", () => {
+    expect((run([text("x"), incomplete("constructor")]).at(-1) as { reason: string }).reason).toBe(
+      "other",
+    );
+  });
+});
