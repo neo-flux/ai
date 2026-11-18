@@ -9,11 +9,11 @@ const isRecord = (value: unknown): value is Json =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 // Reasons name rules only, never content.
-const invalid = (provider: string, reason: string): AIError =>
+export const invalid = (provider: string, reason: string): AIError =>
   new AIError({ code: "invalid_request", provider, cause: new TypeError(reason) });
 
 // Chunked so large images don't overflow the argument limit of String.fromCharCode.
-function base64(bytes: Uint8Array): string {
+export function base64(bytes: Uint8Array): string {
   let binary = "";
   for (let i = 0; i < bytes.length; i += 0x8000) {
     binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -22,7 +22,7 @@ function base64(bytes: Uint8Array): string {
 }
 
 // Servers aren't required to accept a `$schema` key at the top of a parameters object.
-function withoutSchemaKey(schema: Json): Json {
+export function withoutSchemaKey(schema: Json): Json {
   const { $schema: _, ...rest } = schema;
   return rest;
 }
@@ -110,7 +110,7 @@ function optionsOf(value: unknown, provider: string, where: string): Json {
 }
 
 /** Model options, then call options, field by field. `body` merges key by key. */
-function mergedOptions(request: ModelRequest, modelRef: ModelRef, provider: string): Json {
+export function mergedOptions(request: ModelRequest, modelRef: ModelRef, provider: string): Json {
   const fromModel = optionsOf(modelRef.options, provider, "model options");
   const callOptions = request.providerOptions;
   const fromCall = optionsOf(

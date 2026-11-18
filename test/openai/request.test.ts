@@ -1,0 +1,310 @@
+import { describe, expect, test } from "bun:test";
+import { type Adapter, defineProvider, type ModelRequest } from "../../src/adapter.ts";
+import { isAIError } from "../../src/errors.ts";
+import type { Message } from "../../src/messages.ts";
+import { toResponsesParams } from "../../src/openai/request.ts";
+
+const adapter: Adapter = {
+  provider: "openai",
+  // biome-ignore lint/correctness/useYield: never streamed here
+  async *stream() {
+    throw new Error("unused");
+  },
+};
+const model = (options?: unknown) => defineProvider(adapter)("gpt-x", options);
+const params = (request: ModelRequest, options?: unknown) =>
+  toResponsesParams(request, model(options));
+const q: Message = { role: "user", content: "q" };
+const base = { model: "gpt-x", stream: true, store: false };
+const invalid = (fn: () => unknown) => {
+  let thrown: unknown;
+  try {
+    fn();
+  } catch (error) {
+    thrown = error;
+  }
+  expect(isAIError(thrown)).toBe(true);
+  expect(thrown).toMatchObject({ code: "invalid_request", provider: "openai" });
+};
+const item = { id: "rs_1", type: "reasoning", summary: [], encrypted_content: "blob" };
+const callItem = {
+  id: "fc_1",
+  type: "function_call",
+  status: "completed",
+  arguments: '{"city": "Lahore"}',
+  call_id: "call_1",
+  name: "get_weather",
+};
+
+describe("toResponsesParams: messages", () => {
+  test("system messages become instructions, joined by a blank line", () => {
+    const out = params({
+      messages: [{ role: "system", content: "a" }, { role: "system", content: "b" }, q],
+    });
+    expect(out).toEqual({
+      ...base,
+      instructions: "a\n\nb",
+      input: [{ role: "user", content: "q" }],
+    });
+    expect("instructions" in params({ messages: [q] })).toBe(false);
+  });
+
+  test("user parts: text, images and files", () => {
+    const out = params({
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "see" },
+            { type: "image", data: "data:image/png;base64,AAAA" },
+            { type: "image", data: new Uint8Array([104, 105]), mediaType: "image/gif" },
+            {
+              type: "file",
+              data: new Uint8Array([104, 105]),
+              mediaType: "application/pdf",
+              filename: "a.pdf",
+            },
+            { type: "file", data: new Uint8Array([1]), mediaType: "text/plain" },
+          ],
+        },
+      ],
+    });
+    expect(out.input).toEqual([
+      {
+        role: "user",
+        content: [
+          { type: "input_text", text: "see" },
+          { type: "input_image", image_url: "data:image/png;base64,AAAA", detail: "auto" },
+          { type: "input_image", image_url: "data:image/gif;base64,aGk=", detail: "auto" },
+          { type: "input_file", file_data: "data:application/pdf;base64,aGk=", filename: "a.pdf" },
+          { type: "input_file", file_data: "data:text/plain;base64,AQ==" },
+        ],
+      },
+    ]);
+  });
+
+  test("image bytes without a media type are rejected", () => {
+    invalid(() =>
+      params({
+        messages: [{ role: "user", content: [{ type: "image", data: new Uint8Array([1]) }] }],
+      }),
+    );
+  });
+
+  test("assistant parts keep their order; own items are sent verbatim", () => {
+    const out = params({
+      messages: [
+        q,
+        {
+          role: "assistant",
+          content: [
+            { type: "reasoning", text: "", providerMetadata: { openai: { item } } },
+            { type: "text", text: "a" },
+            { type: "text", text: "b" },
+            {
+              type: "tool-call",
+              id: "call_1",
+              name: "get_weather",
+              input: { city: "Lahore" },
+              providerMetadata: { openai: { item: callItem } },
+            },
+            { type: "tool-call", id: "call_2", name: "f", input: { x: 1 } },
+            { type: "tool-call", id: "call_3", name: "f", input: "{bad" },
+          ],
+        },
+        { role: "tool", toolCallId: "call_1", toolName: "get_weather", content: "sunny" },
+        { role: "tool", toolCallId: "call_2", toolName: "f", content: "r2" },
+        { role: "tool", toolCallId: "call_3", toolName: "f", content: "r3" },
+      ],
+    });
+    expect(out.input).toEqual([
+      { role: "user", content: "q" },
+      item,
+      { role: "assistant", content: "ab" },
+      callItem,
+      { type: "function_call", call_id: "call_2", name: "f", arguments: '{"x":1}' },
+      { type: "function_call", call_id: "call_3", name: "f", arguments: "{bad" },
+      { type: "function_call_output", call_id: "call_1", output: "sunny" },
+      { type: "function_call_output", call_id: "call_2", output: "r2" },
+      { type: "function_call_output", call_id: "call_3", output: "r3" },
+    ]);
+  });
+
+  test("reasoning from other providers, or without an item, is dropped", () => {
+    const out = params({
+      messages: [
+        q,
+        {
+          role: "assistant",
+          content: [
+            {
+              type: "reasoning",
+              text: "theirs",
+              providerMetadata: { anthropic: { signature: "s" } },
+            },
+            { type: "reasoning", text: "none" },
+            { type: "reasoning", text: "odd", providerMetadata: { openai: { notItem: 1 } } },
+            { type: "text", text: "t" },
+          ],
+        },
+      ],
+    });
+    expect(out.input).toEqual([
+      { role: "user", content: "q" },
+      { role: "assistant", content: "t" },
+    ]);
+  });
+
+  test("a tool-call item from another provider is rebuilt, not copied", () => {
+    const out = params({
+      messages: [
+        q,
+        {
+          role: "assistant",
+          content: [
+            {
+              type: "tool-call",
+              id: "toolu_1",
+              name: "f",
+              input: {},
+              providerMetadata: { anthropic: { item: callItem } },
+            },
+          ],
+        },
+        { role: "tool", toolCallId: "toolu_1", toolName: "f", content: "r" },
+      ],
+    });
+    expect((out.input as unknown[])[1]).toEqual({
+      type: "function_call",
+      call_id: "toolu_1",
+      name: "f",
+      arguments: "{}",
+    });
+  });
+
+  test("an assistant string and an empty assistant message", () => {
+    const out = params({
+      messages: [q, { role: "assistant", content: "plain" }, { role: "assistant", content: [] }, q],
+    });
+    expect(out.input).toEqual([
+      { role: "user", content: "q" },
+      { role: "assistant", content: "plain" },
+      { role: "user", content: "q" },
+    ]);
+  });
+});
+
+describe("toResponsesParams: tools, output and options", () => {
+  const schema = { $schema: "x", type: "object", properties: { city: { type: "string" } } };
+  const tools = [
+    { name: "f", description: "does f", inputSchema: schema },
+    { name: "g", description: undefined, inputSchema: { type: "object" } },
+  ];
+
+  test("tools are not strict by default and strict with strictSchemas", () => {
+    const loose = params({ messages: [q], tools });
+    expect(loose.tools).toEqual([
+      {
+        type: "function",
+        name: "f",
+        description: "does f",
+        parameters: { type: "object", properties: schema.properties },
+        strict: false,
+      },
+      { type: "function", name: "g", parameters: { type: "object" }, strict: false },
+    ]);
+    const strict = params({ messages: [q], tools }, { strictSchemas: true });
+    expect((strict.tools as { strict: boolean }[]).map((t) => t.strict)).toEqual([true, true]);
+  });
+
+  test("tool choice", () => {
+    const choice = (toolChoice: ModelRequest["toolChoice"]) =>
+      params({ messages: [q], toolChoice }).tool_choice;
+    expect(choice("auto")).toBe("auto");
+    expect(choice("none")).toBe("none");
+    expect(choice("required")).toBe("required");
+    expect(choice({ name: "f" })).toEqual({ type: "function", name: "f" });
+  });
+
+  test("structured output goes in text.format, strict only with strictSchemas", () => {
+    const output = { name: "output", schema };
+    expect(params({ messages: [q], output }).text).toEqual({
+      format: {
+        type: "json_schema",
+        name: "output",
+        schema: { type: "object", properties: schema.properties },
+      },
+    });
+    expect(params({ messages: [q], output }, { strictSchemas: true }).text).toEqual({
+      format: {
+        type: "json_schema",
+        name: "output",
+        schema: { type: "object", properties: schema.properties },
+        strict: true,
+      },
+    });
+  });
+
+  test("max output tokens and temperature", () => {
+    expect(params({ messages: [q], maxOutputTokens: 16, temperature: 0 })).toMatchObject({
+      max_output_tokens: 16,
+      temperature: 0,
+    });
+  });
+
+  test("store defaults to false and can be turned on", () => {
+    expect(params({ messages: [q] }).store).toBe(false);
+    expect(params({ messages: [q] }, { store: true }).store).toBe(true);
+  });
+
+  test("reasoning adds encrypted content to include when nothing is stored", () => {
+    const reasoning = { effort: "low", summary: "auto" };
+    expect(params({ messages: [q] }, { reasoning })).toEqual({
+      ...base,
+      input: [{ role: "user", content: "q" }],
+      reasoning,
+      include: ["reasoning.encrypted_content"],
+    });
+    expect("include" in params({ messages: [q] }, { reasoning, store: true })).toBe(false);
+    expect(params({ messages: [q] }, { reasoning, include: [] }).include).toEqual([]);
+    expect("include" in params({ messages: [q] })).toBe(false);
+  });
+
+  test("call options win over model options, and typed options over body", () => {
+    const out = params(
+      { messages: [q], providerOptions: { openai: { store: true, body: { top_p: 0.5 } } } },
+      { store: false, body: { top_p: 0.1, service_tier: "flex", store: false } },
+    );
+    expect(out).toMatchObject({ store: true, top_p: 0.5, service_tier: "flex" });
+  });
+
+  test("body may not set derived fields", () => {
+    for (const key of [
+      "model",
+      "input",
+      "instructions",
+      "stream",
+      "tools",
+      "tool_choice",
+      "text",
+      "max_output_tokens",
+      "temperature",
+    ]) {
+      invalid(() => params({ messages: [q] }, { body: { [key]: 1 } }));
+    }
+  });
+
+  test("option objects are checked", () => {
+    invalid(() => params({ messages: [q], providerOptions: { openai: 1 } }));
+    invalid(() => params({ messages: [q] }, { body: [] }));
+  });
+
+  test("undefined fields are never written", () => {
+    expect(
+      params({ messages: [q], tools: undefined, output: undefined, temperature: undefined }),
+    ).toEqual({
+      ...base,
+      input: [{ role: "user", content: "q" }],
+    });
+  });
+});
