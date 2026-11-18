@@ -85,3 +85,18 @@ describe("classifyOpenAIError: stream failures end to end", () => {
     });
   });
 });
+
+describe("classifyOpenAIError: security review follow-ups", () => {
+  test("status-less invalid_* and image_too_large codes are invalid_request and don't fail over", () => {
+    const mid = (code: string) =>
+      Object.assign(new Error("response failed"), { status: undefined, error: { code }, code });
+    for (const code of [
+      "invalid_prompt",
+      "invalid_image",
+      "invalid_image_format",
+      "image_too_large",
+    ]) {
+      expect(map(mid(code))).toMatchObject({ code: "invalid_request", failover: false });
+    }
+  });
+});

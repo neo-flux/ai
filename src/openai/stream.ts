@@ -118,8 +118,11 @@ export class ResponsesTranslator {
         const response = isRecord(event.response) ? event.response : {};
         throw streamError(isRecord(response.error) ? response.error : {});
       }
-      case "error":
-        throw streamError(event);
+      case "error": {
+        // The event's own `type` is "error"; it isn't the provider's error type.
+        const { type: _, ...body } = event;
+        throw streamError(body);
+      }
     }
     return out;
   }

@@ -455,3 +455,21 @@ describe("ResponsesTranslator: audit follow-ups", () => {
     expect(events.at(-1)).toEqual({ type: "finish", reason: "tool-calls" });
   });
 });
+
+describe("ResponsesTranslator: security review follow-ups", () => {
+  test("an error event doesn't report its envelope type as the provider type", () => {
+    let thrown: unknown;
+    try {
+      new ResponsesTranslator().push({
+        type: "error",
+        code: "server_error",
+        message: "m",
+        param: null,
+      });
+    } catch (e) {
+      thrown = e;
+    }
+    expect((thrown as { type?: unknown }).type).toBeUndefined();
+    expect((thrown as { error: { type?: unknown } }).error.type).toBeUndefined();
+  });
+});

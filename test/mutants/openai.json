@@ -30,16 +30,16 @@
   {
     "id": "O5",
     "file": "src/openai/request.ts",
-    "description": "tool call item not used verbatim",
-    "find": "    } else if (item !== undefined) {\n      flush();\n      items.push(item);\n    } else {",
-    "replace": "    } else {"
+    "description": "tool call id and status not taken from metadata",
+    "find": "    if (typeof item.id === \"string\") out.id = item.id;\n",
+    "replace": ""
   },
   {
     "id": "O6",
     "file": "src/openai/request.ts",
-    "description": "assistant text not flushed before a tool-call item",
-    "find": "    } else if (item !== undefined) {\n      flush();\n      items.push(item);",
-    "replace": "    } else if (item !== undefined) {\n      items.push(item);"
+    "description": "assistant text not flushed before a tool call",
+    "find": "    } else {\n      flush();\n      items.push(functionCall(part));",
+    "replace": "    } else {\n      items.push(functionCall(part));"
   },
   {
     "id": "O7",
@@ -339,8 +339,8 @@
     "id": "O49",
     "file": "src/openai/stream.ts",
     "description": "error event ignored",
-    "find": "      case \"error\":\n        throw streamError(event);",
-    "replace": "      case \"error\":\n        break;"
+    "find": "        const { type: _, ...body } = event;\n        throw streamError(body);",
+    "replace": "        break;"
   },
   {
     "id": "O50",
@@ -474,5 +474,47 @@
     "description": "stream error param dropped",
     "find": "    param: body.param,",
     "replace": "    param: undefined,"
+  },
+  {
+    "id": "O69",
+    "file": "src/openai/request.ts",
+    "description": "any item type echoed for reasoning",
+    "find": "  if (item?.type !== \"reasoning\") return undefined;",
+    "replace": "  if (item === undefined) return undefined;"
+  },
+  {
+    "id": "O70",
+    "file": "src/openai/request.ts",
+    "description": "reasoning item copied whole",
+    "find": "  for (const key of REASONING_FIELDS) if (Object.hasOwn(item, key)) out[key] = item[key];\n  return out;",
+    "replace": "  return item;"
+  },
+  {
+    "id": "O71",
+    "file": "src/openai/request.ts",
+    "description": "tool call metadata of another type used",
+    "find": "  if (item?.type === \"function_call\") {",
+    "replace": "  if (item !== undefined) {"
+  },
+  {
+    "id": "O72",
+    "file": "src/openai/request.ts",
+    "description": "tool call arguments taken from metadata",
+    "find": "  out.arguments = args ?? \"{}\";",
+    "replace": "  out.arguments = item?.arguments ?? args ?? \"{}\";"
+  },
+  {
+    "id": "O73",
+    "file": "src/openai/stream.ts",
+    "description": "error event type reported as provider type",
+    "find": "        const { type: _, ...body } = event;\n        throw streamError(body);",
+    "replace": "        throw streamError(event);"
+  },
+  {
+    "id": "O74",
+    "file": "src/openai/errors.ts",
+    "description": "invalid_* codes fail over",
+    "find": "    if (code.startsWith(\"invalid_\") || code === \"image_too_large\")\n      return { code: \"invalid_request\" };",
+    "replace": "    if (false)\n      return { code: \"invalid_request\" };"
   }
 ]

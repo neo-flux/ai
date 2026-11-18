@@ -1,6 +1,12 @@
 import type { ModelRef, ModelRequest, ToolChoice } from "../adapter.ts";
 import { base64, invalid, mergedOptions, withoutSchemaKey } from "../compat/request.ts";
-import type { AssistantMessage, Message, ProviderMetadata, UserPart } from "../messages.ts";
+import type {
+  AssistantMessage,
+  Message,
+  ProviderMetadata,
+  ToolCallPart,
+  UserPart,
+} from "../messages.ts";
 
 type Json = Record<string, unknown>;
 
@@ -27,6 +33,34 @@ function ownItem(metadata: ProviderMetadata | undefined): Json | undefined {
   if (metadata === undefined || !Object.hasOwn(metadata, PROVIDER)) return undefined;
   const ours = metadata[PROVIDER];
   return isRecord(ours) && isRecord(ours.item) ? ours.item : undefined;
+}
+
+// Histories may be stored and reloaded, so metadata is checked rather than trusted: only a
+// reasoning item goes back, and only its own fields.
+const REASONING_FIELDS = ["type", "id", "summary", "encrypted_content", "content"] as const;
+
+function reasoningItem(metadata: ProviderMetadata | undefined): Json | undefined {
+  const item = ownItem(metadata);
+  if (item?.type !== "reasoning") return undefined;
+  const out: Json = {};
+  for (const key of REASONING_FIELDS) if (Object.hasOwn(item, key)) out[key] = item[key];
+  return out;
+}
+
+// A tool call is always rebuilt from the part, so edits to the part are what's sent. Only the
+// output item's id and status come from metadata.
+function functionCall(part: ToolCallPart): Json {
+  const args = typeof part.input === "string" ? part.input : JSON.stringify(part.input);
+  const out: Json = { type: "function_call" };
+  const item = ownItem(part.providerMetadata);
+  if (item?.type === "function_call") {
+    if (typeof item.id === "string") out.id = item.id;
+    if (typeof item.status === "string") out.status = item.status;
+  }
+  out.call_id = part.id;
+  out.name = part.name;
+  out.arguments = args ?? "{}";
+  return out;
 }
 
 function userPart(part: UserPart): Json {
@@ -69,25 +103,16 @@ function assistantItems(message: AssistantMessage): Json[] {
       text += part.text;
       continue;
     }
-    const item = ownItem(part.providerMetadata);
     if (part.type === "reasoning") {
       // Only OpenAI's own reasoning items can go back; their encrypted content is opaque to us.
       // Dropped reasoning doesn't split the text around it.
+      const item = reasoningItem(part.providerMetadata);
       if (item === undefined) continue;
-      flush();
-      items.push(item);
-    } else if (item !== undefined) {
       flush();
       items.push(item);
     } else {
       flush();
-      const args = typeof part.input === "string" ? part.input : JSON.stringify(part.input);
-      items.push({
-        type: "function_call",
-        call_id: part.id,
-        name: part.name,
-        arguments: args ?? "{}",
-      });
+      items.push(functionCall(part));
     }
   }
   flush();

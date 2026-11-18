@@ -11,6 +11,11 @@ const BY_CODE: Readonly<Record<string, Classification>> = {
 
 const openaiCodes = (shape: ErrorShape): Classification | undefined => {
   const code = shape.code;
+  // Rejections of the input (moderation, bad images) won't succeed elsewhere either.
+  if (shape.status === undefined && code !== undefined) {
+    if (code.startsWith("invalid_") || code === "image_too_large")
+      return { code: "invalid_request" };
+  }
   if (code === undefined || !Object.hasOwn(BY_CODE, code)) return undefined;
   // With a status, only the codes that change what the status alone would say are mapped.
   if (shape.status === 429 && code === "insufficient_quota") return BY_CODE[code];
