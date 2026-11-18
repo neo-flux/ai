@@ -25,6 +25,8 @@ Pass options to the model, `gpt("id", { ... })`, or per call in `providerOptions
 | `strictSchemas` | `false`   | Sends tools with `strict: true` and structured output with strict schema validation                             |
 | `body`          | none      | Extra top-level fields, for example `{ parallel_tool_calls: true }`                                             |
 
+`store: false` covers stored responses only. OpenAI's prompt cache is retained separately (`prompt_cache_retention`, `"in_memory"` or `"24h"`, with a default that depends on your organization's retention policy). Set it in `body` if that matters to you. Some other `body` keys create or reference state on OpenAI's side whatever `store` says: `conversation`, `previous_response_id`, `background` and `prompt`.
+
 When `reasoning` is set and `store` is false, `include` defaults to `["reasoning.encrypted_content"]`. That's the only way a stateless request can send the model's reasoning back to it on the next turn.
 
 Strict schemas are off by default. Strict mode requires every property to be listed in `required` and `additionalProperties: false`, which many Zod and Valibot schemas don't produce. Turn it on when your schemas meet those rules.
@@ -38,7 +40,8 @@ The adapter leaves OpenAI's stream obfuscation on. It's a mitigation against a n
 - System messages are joined into `instructions`.
 - Images and files are sent as data URLs. Image bytes need a `mediaType`.
 - Tool results are `function_call_output` items. That item has no error flag, so `isError` isn't sent. Say so in the result text if the model needs to know.
-- Reasoning and tool calls from an earlier OpenAI turn are sent back as the exact output items OpenAI returned, including encrypted reasoning. Reasoning from other providers is dropped.
+- Reasoning from an earlier OpenAI turn goes back as the reasoning item OpenAI returned, including its encrypted content. Only the item's own fields are copied, and only if it is a reasoning item. Reasoning from other providers is dropped.
+- Tool calls are rebuilt from the tool-call part, so an edit you make to a stored call (for example, redacting its input) is what's sent. Only the item's `id` and `status` come from the stored metadata.
 
 ## Reasoning
 
