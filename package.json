@@ -21,6 +21,10 @@
       "types": "./dist/deepseek/index.d.ts",
       "default": "./dist/deepseek/index.js"
     },
+    "./openai": {
+      "types": "./dist/openai/index.d.ts",
+      "default": "./dist/openai/index.js"
+    },
     "./testing": {
       "types": "./dist/testing/index.d.ts",
       "default": "./dist/testing/index.js"
