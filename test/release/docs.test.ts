@@ -22,6 +22,22 @@ describe("repository documents", () => {
       expect(existsSync(join(root, ".github/ISSUE_TEMPLATE", f))).toBe(true);
     }
     expect(read(".github/ISSUE_TEMPLATE/config.yml")).toContain("blank_issues_enabled: false");
+    expect(read(".github/ISSUE_TEMPLATE/bug_report.md")).toContain("How to reproduce");
+    expect(read(".github/ISSUE_TEMPLATE/feature_request.md")).toContain("What you're trying to do");
+  });
+
+  test("the release guide marks every open release decision", () => {
+    const guide = read("docs/releasing.md");
+    for (const topic of [
+      "trusted publisher",
+      "required reviewers",
+      "tag ruleset",
+      "Workers",
+      "data terms",
+    ]) {
+      expect({ topic, present: guide.includes(topic) }).toEqual({ topic, present: true });
+    }
+    expect(guide.match(/TODO: confirm/g)?.length).toBeGreaterThanOrEqual(5);
   });
 
   test("dependabot watches actions and bun dev dependencies", () => {
@@ -36,7 +52,23 @@ describe("repository documents", () => {
       const name = subpath === "." ? "@neoflux/ai" : `@neoflux/ai/${subpath.slice(2)}`;
       expect({ name, mentioned: readme.includes(`"${name}"`) }).toEqual({ name, mentioned: true });
     }
-    // No Workers claim until a Workers smoke test exists.
+    // No Workers claim until a Workers smoke test exists. docs/releasing.md says why there is none.
     expect(readme).not.toMatch(/workers/i);
+    for (const doc of [
+      "compat",
+      "deepseek",
+      "openai",
+      "anthropic",
+      "errors",
+      "events",
+      "hooks",
+      "testing",
+      "fixtures",
+    ]) {
+      expect({ doc, workers: /workers/i.test(read(`docs/${doc}.md`)) }).toEqual({
+        doc,
+        workers: false,
+      });
+    }
   });
 });
