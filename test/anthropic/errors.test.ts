@@ -77,3 +77,24 @@ describe("classifyAnthropicError", () => {
     );
   });
 });
+
+describe("classifyAnthropicError: mid-stream types without a status", () => {
+  test("each documented type maps by itself, with no status to fall back on", () => {
+    const mid = (type: string) =>
+      Object.assign(new Error("stream error"), {
+        status: undefined,
+        error: { type: "error", error: { type } },
+        type,
+      });
+    const cases: [string, AIErrorCode][] = [
+      ["authentication_error", "auth"],
+      ["permission_error", "auth"],
+      ["billing_error", "billing"],
+      ["not_found_error", "invalid_request"],
+      ["timeout_error", "timeout"],
+      ["rate_limit_error", "rate_limit"],
+    ];
+    for (const [type, code] of cases)
+      expect({ type, code: map(mid(type)).code }).toEqual({ type, code });
+  });
+});

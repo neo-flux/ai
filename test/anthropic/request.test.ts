@@ -334,3 +334,78 @@ describe("toMessagesParams: mutation follow-ups", () => {
     ]);
   });
 });
+
+describe("toMessagesParams: audit follow-ups", () => {
+  test("non-object tool inputs are sent as {}", () => {
+    for (const input of [[1, 2], 3, null, undefined]) {
+      const out = params({
+        messages: [
+          q,
+          asst([{ type: "tool-call", id: "a", name: "f", input }]),
+          { role: "tool", toolCallId: "a", toolName: "f", content: "r" },
+        ],
+      });
+      const blocks = (out.messages as { content: { input?: unknown }[] }[])[1]?.content ?? [];
+      expect(blocks[0]?.input).toEqual({});
+    }
+  });
+
+  test("a base64 data URL wrapped over lines is accepted", () => {
+    const out = params({
+      messages: [user([{ type: "image", data: "data:image/png;base64,AAAA\nBBBB" }])],
+    });
+    const blocks =
+      (out.messages as { content: { source?: { data: string } }[] }[])[0]?.content ?? [];
+    expect(blocks[0]?.source?.data).toBe("AAAA\nBBBB");
+  });
+
+  test("a system message between tool results ends the group", () => {
+    const out = params({
+      messages: [
+        q,
+        asst([
+          { type: "tool-call", id: "a", name: "f", input: {} },
+          { type: "tool-call", id: "b", name: "f", input: {} },
+        ]),
+        { role: "tool", toolCallId: "a", toolName: "f", content: "r1" },
+        { role: "system", content: "s" },
+        { role: "tool", toolCallId: "b", toolName: "f", content: "r2" },
+      ],
+    });
+    expect((out.messages as unknown[]).slice(2)).toEqual([
+      { role: "user", content: [{ type: "tool_result", tool_use_id: "a", content: "r1" }] },
+      { role: "user", content: [{ type: "tool_result", tool_use_id: "b", content: "r2" }] },
+    ]);
+  });
+
+  test("a text document keeps its filename as the title", () => {
+    const out = params({
+      messages: [
+        user([
+          {
+            type: "file",
+            data: new TextEncoder().encode("x"),
+            mediaType: "text/plain",
+            filename: "a.txt",
+          },
+        ]),
+      ],
+    });
+    expect(
+      ((out.messages as { content: Record<string, unknown>[] }[])[0]?.content ?? [])[0]?.title,
+    ).toBe("a.txt");
+  });
+
+  test("body merges key by key across model and call options", () => {
+    const out = params(
+      { messages: [q], providerOptions: { anthropic: { body: { top_k: 5 } } } },
+      { body: { top_k: 1, metadata: { user_id: "u" } } },
+    );
+    expect(out).toEqual({
+      ...base,
+      messages: [{ role: "user", content: "q" }],
+      top_k: 5,
+      metadata: { user_id: "u" },
+    });
+  });
+});

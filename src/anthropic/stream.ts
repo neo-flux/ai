@@ -105,10 +105,16 @@ export class MessagesTranslator {
   }
 
   #blockStart(index: number, block: Json, out: StreamEvent[]): void {
+    // Blocks arrive one after another. If one ever starts while thinking is still open, the
+    // thinking block is closed first so its signature isn't lost and the event order stays valid.
+    for (const [open, b] of this.#blocks) if (b.kind === "thinking") this.#blockStop(open, out);
     switch (block.type) {
-      case "text":
+      case "text": {
         this.#blocks.set(index, { kind: "text" });
+        const text = nonEmpty(block.text);
+        if (text !== undefined) out.push({ type: "text-delta", text });
         return;
+      }
       case "thinking": {
         const thinking: Block = {
           kind: "thinking",

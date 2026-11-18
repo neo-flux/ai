@@ -97,6 +97,7 @@ describe("MessagesTranslator: text, usage, finish", () => {
     expect(reason("model_context_window_exceeded")).toBe("length");
     expect(reason("refusal")).toBe("content-filter");
     expect(reason("pause_turn")).toBe("other");
+    // tool_use with no tool call started can only finish as "other" (the ordering rules need a call).
     expect(reason("tool_use")).toBe("other");
     expect(reason("constructor")).toBe("other");
   });
@@ -291,5 +292,102 @@ describe("MessagesTranslator: mutation follow-ups", () => {
     ).usage;
     expect(u.inputTokens).toBeUndefined();
     expect(u.outputTokens).toBeUndefined();
+  });
+});
+
+describe("MessagesTranslator: audit follow-ups", () => {
+  test("a thinking block still open at message_stop is ended with its signature", () => {
+    const events = run([
+      start(),
+      blockStart(0, { type: "thinking", thinking: "", signature: "" }),
+      delta(0, { type: "signature_delta", signature: "s" }),
+      messageDelta("end_turn"),
+      end,
+    ]);
+    expect(events.find((e) => e.type === "reasoning-end")).toEqual({
+      type: "reasoning-end",
+      providerMetadata: { anthropic: { signature: "s" } },
+    });
+  });
+
+  test("zero token counts are kept as 0", () => {
+    const events = run([
+      start({
+        input_tokens: 0,
+        cache_read_input_tokens: 0,
+        cache_creation_input_tokens: 0,
+        output_tokens: 0,
+      }),
+      ...text(0, ["x"]),
+      messageDelta("end_turn", { output_tokens: 0, output_tokens_details: null }),
+      end,
+    ]);
+    const u = (
+      events.find((e) => e.type === "usage") as unknown as { usage: Record<string, unknown> }
+    ).usage;
+    expect(u).toMatchObject({
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      cacheWriteTokens: 0,
+    });
+    expect(u.reasoningTokens).toBeUndefined();
+  });
+
+  test("redacted thinking without data, and tool use without an id or name, are dropped", () => {
+    const events = run([
+      start(),
+      blockStart(0, { type: "redacted_thinking" }),
+      stop(0),
+      blockStart(1, { type: "tool_use", id: "t", input: {} }),
+      stop(1),
+      blockStart(2, { type: "tool_use", name: "f", input: {} }),
+      stop(2),
+      ...text(3, ["x"]),
+      messageDelta("end_turn"),
+      end,
+    ]);
+    expect(types(events)).toEqual(["text-delta", "usage", "finish"]);
+  });
+
+  test("text in a text block's start is emitted", () => {
+    const events = run([
+      start(),
+      blockStart(0, { type: "text", text: "pre" }),
+      stop(0),
+      messageDelta("end_turn"),
+      end,
+    ]);
+    expect(events[0]).toEqual({ type: "text-delta", text: "pre" });
+  });
+
+  test("a block that starts while thinking is open closes the thinking first", () => {
+    const events = run([
+      start(),
+      blockStart(0, { type: "thinking", thinking: "", signature: "" }),
+      delta(0, { type: "thinking_delta", thinking: "t" }),
+      delta(0, { type: "signature_delta", signature: "s" }),
+      blockStart(1, { type: "tool_use", id: "a", name: "f", input: {} }),
+      stop(0),
+      stop(1),
+      blockStart(2, { type: "thinking", thinking: "", signature: "" }),
+      blockStart(3, { type: "redacted_thinking", data: "r" }),
+      stop(2),
+      stop(3),
+      messageDelta("tool_use"),
+      end,
+    ]);
+    expect(types(events)).toEqual([
+      "reasoning-delta",
+      "reasoning-end",
+      "tool-call-start",
+      "tool-call-end",
+      "reasoning-delta",
+      "reasoning-end",
+      "reasoning-delta",
+      "reasoning-end",
+      "usage",
+      "finish",
+    ]);
   });
 });

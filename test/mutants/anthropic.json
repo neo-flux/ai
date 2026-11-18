@@ -425,5 +425,68 @@
     "description": "classifyError not wired",
     "find": "    classifyError: classifyAnthropicError,",
     "replace": "    classifyError: undefined,"
+  },
+  {
+    "id": "A62",
+    "file": "src/anthropic/stream.ts",
+    "description": "zero token counts dropped",
+    "find": "Number.isSafeInteger(value) && value >= 0 ? value",
+    "replace": "Number.isSafeInteger(value) && value > 0 ? value"
+  },
+  {
+    "id": "A63",
+    "file": "src/anthropic/stream.ts",
+    "description": "open thinking not closed by a new block",
+    "find": "    for (const [open, b] of this.#blocks) if (b.kind === \"thinking\") this.#blockStop(open, out);\n",
+    "replace": ""
+  },
+  {
+    "id": "A64",
+    "file": "src/anthropic/stream.ts",
+    "description": "text in a text block start dropped",
+    "find": "        if (text !== undefined) out.push({ type: \"text-delta\", text });\n        return;\n      }\n      case \"thinking\": {",
+    "replace": "        return;\n      }\n      case \"thinking\": {"
+  },
+  {
+    "id": "A65",
+    "file": "src/anthropic/stream.ts",
+    "description": "redacted thinking without data emitted",
+    "find": "        if (typeof block.data !== \"string\") return;\n",
+    "replace": ""
+  },
+  {
+    "id": "A66",
+    "file": "src/anthropic/request.ts",
+    "description": "multi-line data URL rejected",
+    "find": "/^data:([^;,]+);base64,(.*)$/s",
+    "replace": "/^data:([^;,]+);base64,(.*)$/"
+  },
+  {
+    "id": "A67",
+    "file": "src/anthropic/request.ts",
+    "description": "non-object non-string tool input sent",
+    "find": "  if (typeof input !== \"string\") return isRecord(input) ? input : {};",
+    "replace": "  if (typeof input !== \"string\") return input ?? {};"
+  },
+  {
+    "id": "A68",
+    "file": "src/anthropic/errors.ts",
+    "description": "authentication_error not mapped",
+    "find": "  authentication_error: { code: \"auth\" },\n",
+    "replace": ""
+  },
+  {
+    "id": "A69",
+    "file": "src/anthropic/errors.ts",
+    "description": "billing_error not mapped",
+    "find": "  billing_error: { code: \"billing\" },\n",
+    "replace": ""
+  },
+  {
+    "id": "A70",
+    "file": "src/anthropic/errors.ts",
+    "description": "not_found_error not mapped",
+    "find": "  not_found_error: { code: \"invalid_request\" },\n",
+    "replace": ""
   }
 ]

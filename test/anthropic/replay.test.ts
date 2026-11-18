@@ -207,7 +207,14 @@ describe("anthropic replay: reasoning", () => {
     const r = await s.result;
     const part = (r.message.content as readonly { type: string; text?: string }[])[0];
     expect(part?.type).toBe("reasoning");
-    expect((part?.text ?? "").length).toBeGreaterThan(0);
+    const recorded =
+      fixture.calls[0]?.chunks
+        .map((c) => c as { type: string; delta?: { type: string; thinking?: string } })
+        .filter((c) => c.type === "content_block_delta" && c.delta?.type === "thinking_delta")
+        .map((c) => c.delta?.thinking ?? "")
+        .join("") ?? "";
+    expect(recorded.length).toBeGreaterThan(0);
+    expect(part?.text).toBe(recorded);
   });
 
   replayTest(
