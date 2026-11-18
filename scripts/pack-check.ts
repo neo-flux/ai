@@ -1,5 +1,4 @@
 // Builds, packs, and checks the tarball exactly as it would be published.
-// TODO: confirm the public repository URL (GitHub mirror org and repo), then add `repository` to package.json.
 import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";

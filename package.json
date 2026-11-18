@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "description": "Provider-neutral TypeScript library for calling LLMs",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neo-flux/ai.git"
+  },
+  "homepage": "https://github.com/neo-flux/ai#readme",
+  "bugs": {
+    "url": "https://github.com/neo-flux/ai/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "files": [
