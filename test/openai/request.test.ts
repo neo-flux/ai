@@ -405,3 +405,14 @@ describe("toResponsesParams: audit follow-ups", () => {
     ]);
   });
 });
+
+describe("toResponsesParams: body include", () => {
+  test("include set only in body survives the reasoning default when nothing is stored", () => {
+    const out = params(
+      { messages: [q] },
+      { reasoning: { effort: "low" }, body: { include: ["x"] } },
+    );
+    expect(out.store).toBe(false);
+    expect(out.include).toEqual(["x"]);
+  });
+});
