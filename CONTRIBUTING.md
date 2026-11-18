@@ -13,6 +13,7 @@ bun install --frozen-lockfile
 bun run check            # typecheck, lint, tests, pack check, smoke (Node and Deno)
 bun run fixtures:check   # scans recorded fixtures for secrets
 bun run mutate           # hand-written mutation tests, slow
+NEOFLUX_AI_LIVE=1 bun test test/live   # real provider requests, needs your keys
 ```
 
 `bun run check` must pass before a pull request is merged. Deno is needed locally for the smoke test.

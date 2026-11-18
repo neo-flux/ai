@@ -115,3 +115,16 @@ The scrubber then runs the fixture guard on its own output and refuses to write 
 If `error-context` comes back as a 429, the filler went over a per-minute token limit before it reached the context window. Don't commit that recording.
 
 A refusal for anything else means the scrubber needs a new rule, not that the file should be edited by hand. Refusal messages quote the offending values, so don't paste them anywhere public. The guard can also refuse opaque-looking strings it can't tell apart from tokens, such as base64 or hex in model output. The synthetic prompts are chosen to avoid those. The same guard runs over every committed fixture in `bun test`.
+
+## Live contract tests
+
+`test/live/providers.test.ts` sends real requests, to check that the recorded fixtures still describe the provider APIs. For each provider it streams a short text answer (checking event order and usage), runs a two-turn tool call, and checks that a bad key is `auth`. The tests are skipped unless `NEOFLUX_AI_LIVE=1` is set, and each provider is skipped unless its key is set. They cost a few cents per run. Models come from `scripts/recorder/models.ts`.
+
+```sh
+NEOFLUX_AI_LIVE=1 \
+OPENAI_API_KEY=... ANTHROPIC_API_KEY=... \
+DEEPSEEK_API_KEY=... NEOFLUX_AI_DEEPSEEK_BASE_URL=https://api.deepseek.com \
+bun test test/live
+```
+
+CI never sets `NEOFLUX_AI_LIVE`, so CI makes no provider requests.
