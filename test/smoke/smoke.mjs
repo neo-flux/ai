@@ -1,6 +1,7 @@
 // Copied into a scratch project that has the packed tarball in node_modules, then run unchanged
 // on Node and Deno. Static imports by package name only, so Deno needs no permissions.
 import * as root from "@neoflux/ai";
+import * as anthropic from "@neoflux/ai/anthropic";
 import * as compat from "@neoflux/ai/compat";
 import * as deepseek from "@neoflux/ai/deepseek";
 import * as openai from "@neoflux/ai/openai";
@@ -10,6 +11,7 @@ import pkg from "./node_modules/@neoflux/ai/package.json" with { type: "json" };
 
 const entries = {
   ".": root,
+  "./anthropic": anthropic,
   "./compat": compat,
   "./deepseek": deepseek,
   "./openai": openai,

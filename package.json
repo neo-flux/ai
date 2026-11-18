@@ -13,6 +13,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./anthropic": {
+      "types": "./dist/anthropic/index.d.ts",
+      "default": "./dist/anthropic/index.js"
+    },
     "./compat": {
       "types": "./dist/compat/index.d.ts",
       "default": "./dist/compat/index.js"
