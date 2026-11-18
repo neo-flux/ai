@@ -94,7 +94,7 @@
     "id": "X14",
     "file": "src/compat/request.ts",
     "description": "reasoning echo ignores the provider key",
-    "find": "      if (meta !== undefined && Object.hasOwn(meta, provider)) reasoning.push(part.text);",
+    "find": "      if (isRecord(meta) && Object.hasOwn(meta, provider)) reasoning.push(part.text);",
     "replace": "      reasoning.push(part.text);"
   },
   {
@@ -591,8 +591,8 @@
     "id": "X85",
     "file": "src/compat/request.ts",
     "description": "reasoning echo reads inherited metadata keys",
-    "find": "meta !== undefined && Object.hasOwn(meta, provider)",
-    "replace": "meta !== undefined && meta[provider] !== undefined"
+    "find": "isRecord(meta) && Object.hasOwn(meta, provider)",
+    "replace": "isRecord(meta) && meta[provider] !== undefined"
   },
   {
     "id": "X86",

@@ -519,3 +519,46 @@ describe("toResponsesParams: tool call metadata type", () => {
     });
   });
 });
+
+describe("toResponsesParams: null metadata and filenames", () => {
+  test("null provider metadata is treated as none", () => {
+    const out = params({
+      messages: [
+        q,
+        {
+          role: "assistant",
+          content: [
+            { type: "reasoning", text: "", providerMetadata: null as never },
+            { type: "text", text: "t" },
+          ],
+        },
+      ],
+    });
+    expect(out.input).toEqual([
+      { role: "user", content: "q" },
+      { role: "assistant", content: "t" },
+    ]);
+  });
+
+  test("a non-string filename is not sent", () => {
+    const out = params({
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "file",
+              data: new Uint8Array([1]),
+              mediaType: "application/pdf",
+              filename: 5 as never,
+            },
+          ],
+        },
+      ],
+    });
+    expect(((out.input as { content: Record<string, unknown>[] }[])[0]?.content ?? [])[0]).toEqual({
+      type: "input_file",
+      file_data: "data:application/pdf;base64,AQ==",
+    });
+  });
+});

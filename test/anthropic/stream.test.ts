@@ -391,3 +391,30 @@ describe("MessagesTranslator: audit follow-ups", () => {
     ]);
   });
 });
+
+describe("MessagesTranslator: security review follow-ups", () => {
+  test("a block start reusing an open index ends the earlier block first", () => {
+    const events = run([
+      start(),
+      blockStart(0, { type: "tool_use", id: "a", name: "f", input: {} }),
+      blockStart(0, { type: "tool_use", id: "b", name: "f", input: {} }),
+      stop(0),
+      messageDelta("tool_use"),
+      end,
+    ]);
+    expect(
+      events.filter((e) => e.type === "tool-call-end").map((e) => (e as { id: string }).id),
+    ).toEqual(["a", "b"]);
+  });
+
+  test("a thinking block without a signature carries no signature metadata", () => {
+    const events = run([
+      start(),
+      blockStart(0, { type: "thinking", thinking: "t", signature: "" }),
+      stop(0),
+      messageDelta("end_turn"),
+      end,
+    ]);
+    expect(events.find((e) => e.type === "reasoning-end")).toEqual({ type: "reasoning-end" });
+  });
+});

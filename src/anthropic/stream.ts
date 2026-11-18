@@ -108,6 +108,8 @@ export class MessagesTranslator {
     // Blocks arrive one after another. If one ever starts while thinking is still open, the
     // thinking block is closed first so its signature isn't lost and the event order stays valid.
     for (const [open, b] of this.#blocks) if (b.kind === "thinking") this.#blockStop(open, out);
+    // A start that reuses an open index ends the earlier block rather than losing it.
+    this.#blockStop(index, out);
     switch (block.type) {
       case "text": {
         this.#blocks.set(index, { kind: "text" });
@@ -175,10 +177,15 @@ export class MessagesTranslator {
     if (block.kind === "thinking") {
       // Omitted thinking streams no text, only a signature, and still has to go back next turn.
       if (!block.emitted) out.push({ type: "reasoning-delta", text: "" });
-      out.push({
-        type: "reasoning-end",
-        providerMetadata: { [PROVIDER]: { signature: block.signature } },
-      });
+      // Without a signature the block can't be sent back, so it carries no metadata.
+      out.push(
+        block.signature === ""
+          ? { type: "reasoning-end" }
+          : {
+              type: "reasoning-end",
+              providerMetadata: { [PROVIDER]: { signature: block.signature } },
+            },
+      );
     } else if (block.kind === "tool") {
       this.#ended++;
       out.push({ type: "tool-call-end", id: block.id });

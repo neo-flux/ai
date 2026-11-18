@@ -17,8 +17,8 @@
     "id": "O3",
     "file": "src/openai/request.ts",
     "description": "own item check reads inherited keys",
-    "find": "if (metadata === undefined || !Object.hasOwn(metadata, PROVIDER)) return undefined;",
-    "replace": "if (metadata === undefined) return undefined;"
+    "find": "  if (!isRecord(metadata) || !Object.hasOwn(metadata, PROVIDER)) return undefined;",
+    "replace": "  if (!isRecord(metadata)) return undefined;"
   },
   {
     "id": "O4",
@@ -73,7 +73,7 @@
     "id": "O11",
     "file": "src/openai/request.ts",
     "description": "file name dropped",
-    "find": "      if (part.filename !== undefined) file.filename = part.filename;\n",
+    "find": "      if (typeof part.filename === \"string\") file.filename = part.filename;\n",
     "replace": ""
   },
   {
@@ -516,5 +516,12 @@
     "description": "invalid_* codes fail over",
     "find": "    if (code.startsWith(\"invalid_\") || code === \"image_too_large\")\n      return { code: \"invalid_request\" };",
     "replace": "    if (false)\n      return { code: \"invalid_request\" };"
+  },
+  {
+    "id": "O75",
+    "file": "src/openai/request.ts",
+    "description": "null metadata throws",
+    "find": "  if (!isRecord(metadata) || !Object.hasOwn(metadata, PROVIDER)) return undefined;",
+    "replace": "  if (metadata === undefined || !Object.hasOwn(metadata, PROVIDER)) return undefined;"
   }
 ]

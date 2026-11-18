@@ -45,8 +45,8 @@
     "id": "A7",
     "file": "src/anthropic/request.ts",
     "description": "non-base64 data URL accepted",
-    "find": "      if (match === null) throw invalid(PROVIDER, \"image data URLs must be base64\");",
-    "replace": "      if (match === null) return image(\"image/png\", part.data);"
+    "find": "      if (match === null || !BASE64.test(match[2] as string)) {",
+    "replace": "      if (match === null) {"
   },
   {
     "id": "A8",
@@ -59,15 +59,15 @@
     "id": "A9",
     "file": "src/anthropic/request.ts",
     "description": "document title dropped",
-    "find": "      if (part.filename !== undefined) doc.title = part.filename;\n",
+    "find": "      if (typeof part.filename === \"string\") doc.title = part.filename;\n",
     "replace": ""
   },
   {
     "id": "A10",
     "file": "src/anthropic/request.ts",
     "description": "own metadata check reads inherited keys",
-    "find": "  if (metadata === undefined || !Object.hasOwn(metadata, PROVIDER)) return undefined;",
-    "replace": "  if (metadata === undefined) return undefined;"
+    "find": "  if (!isRecord(metadata) || !Object.hasOwn(metadata, PROVIDER)) return undefined;",
+    "replace": "  if (!isRecord(metadata)) return undefined;"
   },
   {
     "id": "A11",
@@ -488,5 +488,40 @@
     "description": "not_found_error not mapped",
     "find": "  not_found_error: { code: \"invalid_request\" },\n",
     "replace": ""
+  },
+  {
+    "id": "A71",
+    "file": "src/anthropic/request.ts",
+    "description": "data URL mediaType mismatch accepted",
+    "find": "      if (part.mediaType !== undefined && part.mediaType !== match[1]) {",
+    "replace": "      if (false) {"
+  },
+  {
+    "id": "A72",
+    "file": "src/anthropic/request.ts",
+    "description": "non-string filename sent",
+    "find": "      if (typeof part.filename === \"string\") doc.title = part.filename;",
+    "replace": "      if (part.filename !== undefined) doc.title = part.filename;"
+  },
+  {
+    "id": "A73",
+    "file": "src/anthropic/request.ts",
+    "description": "null metadata throws",
+    "find": "  if (!isRecord(metadata) || !Object.hasOwn(metadata, PROVIDER)) return undefined;",
+    "replace": "  if (metadata === undefined || !Object.hasOwn(metadata, PROVIDER)) return undefined;"
+  },
+  {
+    "id": "A74",
+    "file": "src/anthropic/stream.ts",
+    "description": "reused block index loses the earlier block",
+    "find": "    this.#blockStop(index, out);\n    switch (block.type) {",
+    "replace": "    switch (block.type) {"
+  },
+  {
+    "id": "A75",
+    "file": "src/anthropic/stream.ts",
+    "description": "empty signature stored as metadata",
+    "find": "        block.signature === \"\"\n",
+    "replace": "        false\n"
   }
 ]

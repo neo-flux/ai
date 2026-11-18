@@ -56,7 +56,7 @@ function assistant(message: AssistantMessage, quirks: ResolvedQuirks, provider: 
     else if (part.type === "reasoning") {
       // Only this provider's own reasoning goes back; another model's thinking doesn't belong here.
       const meta = part.providerMetadata;
-      if (meta !== undefined && Object.hasOwn(meta, provider)) reasoning.push(part.text);
+      if (isRecord(meta) && Object.hasOwn(meta, provider)) reasoning.push(part.text);
     } else {
       const args = typeof part.input === "string" ? part.input : JSON.stringify(part.input);
       toolCalls.push({

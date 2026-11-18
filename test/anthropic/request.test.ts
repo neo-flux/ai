@@ -409,3 +409,62 @@ describe("toMessagesParams: audit follow-ups", () => {
     });
   });
 });
+
+describe("toMessagesParams: security review follow-ups", () => {
+  test("null provider metadata is treated as none", () => {
+    const out = params({
+      messages: [
+        q,
+        asst([
+          { type: "reasoning", text: "r", providerMetadata: null as never },
+          { type: "text", text: "t" },
+        ]),
+      ],
+    });
+    expect((out.messages as unknown[])[1]).toEqual({
+      role: "assistant",
+      content: [{ type: "text", text: "t" }],
+    });
+  });
+
+  test("a data URL must agree with mediaType and carry base64", () => {
+    invalid(() =>
+      params({
+        messages: [
+          user([{ type: "image", data: "data:image/png;base64,AAAA", mediaType: "image/gif" }]),
+        ],
+      }),
+    );
+    invalid(() =>
+      params({ messages: [user([{ type: "image", data: "data:image/png;base64,<script>" }])] }),
+    );
+    expect(
+      ((
+        params({
+          messages: [
+            user([{ type: "image", data: "data:image/png;base64,AA==", mediaType: "image/png" }]),
+          ],
+        }).messages as { content: { source?: { data: string } }[] }[]
+      )[0]?.content ?? [])[0]?.source?.data,
+    ).toBe("AA==");
+  });
+
+  test("a non-string filename is not sent as the title", () => {
+    const out = params({
+      messages: [
+        user([
+          {
+            type: "file",
+            data: new Uint8Array([1]),
+            mediaType: "application/pdf",
+            filename: {} as never,
+          },
+        ]),
+      ],
+    });
+    expect(
+      "title" in
+        (((out.messages as { content: Record<string, unknown>[] }[])[0]?.content ?? [])[0] ?? {}),
+    ).toBe(false);
+  });
+});

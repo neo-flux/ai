@@ -30,7 +30,7 @@ const isRecord = (value: unknown): value is Json =>
 
 /** The output item this provider stored on a part, if the part is ours. */
 function ownItem(metadata: ProviderMetadata | undefined): Json | undefined {
-  if (metadata === undefined || !Object.hasOwn(metadata, PROVIDER)) return undefined;
+  if (!isRecord(metadata) || !Object.hasOwn(metadata, PROVIDER)) return undefined;
   const ours = metadata[PROVIDER];
   return isRecord(ours) && isRecord(ours.item) ? ours.item : undefined;
 }
@@ -82,7 +82,7 @@ function userPart(part: UserPart): Json {
         type: "input_file",
         file_data: `data:${part.mediaType};base64,${base64(part.data)}`,
       };
-      if (part.filename !== undefined) file.filename = part.filename;
+      if (typeof part.filename === "string") file.filename = part.filename;
       return file;
     }
   }

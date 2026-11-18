@@ -22,13 +22,16 @@ export const RESERVED_KEYS: readonly string[] = [
   "output_config",
 ];
 
+// Base64, allowing the line breaks of wrapped encodings.
+const BASE64 = /^[A-Za-z0-9+/\s]*={0,2}\s*$/;
+
 const IMAGE_TYPES: readonly string[] = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
 const isRecord = (value: unknown): value is Json =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 function ownMetadata(metadata: ProviderMetadata | undefined): Json | undefined {
-  if (metadata === undefined || !Object.hasOwn(metadata, PROVIDER)) return undefined;
+  if (!isRecord(metadata) || !Object.hasOwn(metadata, PROVIDER)) return undefined;
   const ours = metadata[PROVIDER];
   return isRecord(ours) ? ours : undefined;
 }
@@ -47,7 +50,12 @@ function userPart(part: UserPart): Json {
     case "image": {
       if (typeof part.data !== "string") return image(part.mediaType, base64(part.data));
       const match = /^data:([^;,]+);base64,(.*)$/s.exec(part.data);
-      if (match === null) throw invalid(PROVIDER, "image data URLs must be base64");
+      if (match === null || !BASE64.test(match[2] as string)) {
+        throw invalid(PROVIDER, "image data URLs must be base64");
+      }
+      if (part.mediaType !== undefined && part.mediaType !== match[1]) {
+        throw invalid(PROVIDER, "image mediaType doesn't match its data URL");
+      }
       return image(match[1], match[2] as string);
     }
     case "file": {
@@ -63,7 +71,7 @@ function userPart(part: UserPart): Json {
       } else {
         throw invalid(PROVIDER, "files must be PDF or plain text");
       }
-      if (part.filename !== undefined) doc.title = part.filename;
+      if (typeof part.filename === "string") doc.title = part.filename;
       return doc;
     }
   }
