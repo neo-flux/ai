@@ -44,6 +44,11 @@ Thinking streams as `reasoning-delta` events. Each thinking block ends with a `r
 
 When you send the assistant message back, its thinking blocks go back exactly as Anthropic sent them, signature included, as the API requires. Reasoning from other providers is never sent to Anthropic.
 
+## Not supported yet
+
+- **Server tools.** Blocks for tools Anthropic runs itself (`server_tool_use`, `web_search_tool_result`, `web_fetch_tool_result`, code execution and similar) are skipped. Their text isn't part of the answer, and a `pause_turn` stop finishes as `other`, so such a turn can't be continued through this library yet.
+- **Citations.** `citations_delta` events are ignored, and the cited text still arrives as ordinary text.
+
 ## Usage
 
 Anthropic's `input_tokens` doesn't include cached input. The library adds `cache_read_input_tokens` and `cache_creation_input_tokens` to it, so `inputTokens` is the total. `cachedInputTokens` is the cache reads, `cacheWriteTokens` the cache writes, and `reasoningTokens` is `output_tokens_details.thinking_tokens` where it's reported.
