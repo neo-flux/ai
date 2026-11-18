@@ -372,8 +372,7 @@ describe("toChatParams: audit follow-ups", () => {
 });
 
 describe("toChatParams: security review follow-ups", () => {
-  const own = (name: string) =>
-    resolveQuirks({ reasoningField: "reasoning_content", echoReasoning: true });
+  const own = () => resolveQuirks({ reasoningField: "reasoning_content", echoReasoning: true });
 
   test("a provider named like an Object.prototype key echoes only its own reasoning", () => {
     for (const name of ["constructor", "toString", "valueOf", "hasOwnProperty"]) {
@@ -389,7 +388,7 @@ describe("toChatParams: security review follow-ups", () => {
           providerOptions: { other: { body: { x: 1 } } },
         },
         model(),
-        own(name),
+        own(),
         name,
       );
       expect((out.messages as Record<string, unknown>[])[1]).toEqual({
