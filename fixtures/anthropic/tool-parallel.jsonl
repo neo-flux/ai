@@ -1,0 +1,18 @@
+{"kind":"meta","format":1,"provider":"anthropic","case":"tool-parallel","api":"messages","sdk":"@anthropic-ai/sdk@1.9.0","model":"claude-haiku-5-5","recordedOn":"2026-11-17"}
+{"kind":"call","index":0,"request":{"model":"claude-haiku-5-5","max_tokens":512,"system":"You are a concise assistant used to record API test fixtures.","messages":[{"role":"user","content":"What is the weather in Lahore and in Karachi right now? Call get_weather once for each city."}],"stream":true,"tools":[{"name":"get_weather","description":"Get the current weather for a city.","input_schema":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"],"additionalProperties":false}}],"tool_choice":{"type":"any"}},"options":{}}
+{"kind":"chunk","call":0,"data":{"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_fixture0001","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":545,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":8,"service_tier":null,"inference_geo":null,"speed":"standard"},"diagnostics":null}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_fixture0002","name":"get_weather","input":{},"caller":{"type":"direct"}}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":""}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"city\""}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":": \"Laho"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"re\"}"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_stop","index":0}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_start","index":1,"content_block":{"type":"tool_use","id":"toolu_fixture0003","name":"get_weather","input":{},"caller":{"type":"direct"}}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":""}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\"city\""}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":": \"Kara"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"chi\"}"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_stop","index":1}}
+{"kind":"chunk","call":0,"data":{"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":545,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":89,"output_tokens_details":{"thinking_tokens":0}}}}
+{"kind":"chunk","call":0,"data":{"type":"message_stop"}}
+{"kind":"end","call":0,"outcome":"completed"}

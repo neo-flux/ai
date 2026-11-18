@@ -1,0 +1,11 @@
+{"kind":"meta","format":1,"provider":"anthropic","case":"structured","api":"messages","sdk":"@anthropic-ai/sdk@1.9.0","model":"claude-haiku-5-5","recordedOn":"2026-11-17"}
+{"kind":"call","index":0,"request":{"model":"claude-haiku-5-5","max_tokens":512,"system":"You are a concise assistant used to record API test fixtures.","messages":[{"role":"user","content":"Name one large city in Pakistan and its approximate population."}],"stream":true,"output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"name":{"type":"string"},"population":{"type":"integer"}},"required":["name","population"],"additionalProperties":false}}}},"options":{}}
+{"kind":"chunk","call":0,"data":{"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_fixture0001","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":252,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":8,"service_tier":null,"inference_geo":null,"speed":"standard"},"diagnostics":null}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"{\"name\": \"Karach"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"i\", \"population\": 16"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"000000}"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_stop","index":0}}
+{"kind":"chunk","call":0,"data":{"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":252,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":20,"output_tokens_details":{"thinking_tokens":0}}}}
+{"kind":"chunk","call":0,"data":{"type":"message_stop"}}
+{"kind":"end","call":0,"outcome":"completed"}

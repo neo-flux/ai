@@ -1,0 +1,4 @@
+{"kind":"meta","format":1,"provider":"anthropic","case":"error-timeout","api":"messages","sdk":"@anthropic-ai/sdk@1.9.0","model":"claude-haiku-5-5","recordedOn":"2026-11-17"}
+{"kind":"call","index":0,"request":{"model":"claude-haiku-5-5","max_tokens":512,"system":"You are a concise assistant used to record API test fixtures.","messages":[{"role":"user","content":"Reply with exactly: Hello from the fixture."}],"stream":true},"options":{"timeoutMs":1}}
+{"kind":"error","call":0,"phase":"create","afterChunks":0,"error":{"name":"APIConnectionTimeoutError","status":null,"message":"Request timed out.","error":null,"headers":{},"type":null,"errorCode":null,"details":null,"apiMessage":null}}
+{"kind":"end","call":0,"outcome":"threw"}

@@ -1,0 +1,53 @@
+{"kind":"meta","format":1,"provider":"anthropic","case":"reasoning-tool-round-trip","api":"messages","sdk":"@anthropic-ai/sdk@1.9.0","model":"claude-haiku-5-5","recordedOn":"2026-11-17"}
+{"kind":"call","index":0,"request":{"model":"claude-haiku-5-5","max_tokens":4096,"system":"You are a concise assistant used to record API test fixtures.","messages":[{"role":"user","content":"Decide which city to check, then call get_weather for Lahore and tell me whether I need an umbrella."}],"stream":true,"thinking":{"type":"adaptive","display":"summarized"},"output_config":{"effort":"high"},"tools":[{"name":"get_weather","description":"Get the current weather for a city.","input_schema":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"],"additionalProperties":false}}],"tool_choice":{"type":"auto"}},"options":{}}
+{"kind":"chunk","call":0,"data":{"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_fixture0001","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":428,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":4,"service_tier":null,"inference_geo":null,"speed":"standard"},"diagnostics":null}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"","signature":""}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"I need"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" to check wh"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"ether"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" Lahore is the city I should"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" pass"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" to"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" the"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" weather l"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"ookup. The request"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" is to call get_weather for"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" Lahore direct"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"ly, so I'll make that"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" call now."}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"\n\n"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"fixture-opaque-0001"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_stop","index":0}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_start","index":1,"content_block":{"type":"tool_use","id":"toolu_fixture0002","name":"get_weather","input":{},"caller":{"type":"direct"}}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":""}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\"city\""}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":": \"Laho"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"re\"}"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_stop","index":1}}
+{"kind":"chunk","call":0,"data":{"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":428,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":130,"output_tokens_details":{"thinking_tokens":78}}}}
+{"kind":"chunk","call":0,"data":{"type":"message_stop"}}
+{"kind":"end","call":0,"outcome":"completed"}
+{"kind":"call","index":1,"request":{"model":"claude-haiku-5-5","max_tokens":4096,"system":"You are a concise assistant used to record API test fixtures.","messages":[{"role":"user","content":"Decide which city to check, then call get_weather for Lahore and tell me whether I need an umbrella."},{"role":"assistant","content":[{"type":"thinking","thinking":"I need to check whether Lahore is the city I should pass to the weather lookup. The request is to call get_weather for Lahore directly, so I'll make that call now.\n\n","signature":"fixture-opaque-0001"},{"type":"tool_use","id":"toolu_fixture0002","name":"get_weather","input":{"city":"Lahore"}}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_fixture0002","content":"{\"city\":\"Lahore\",\"temperature_c\":31,\"conditions\":\"sunny\"}"}]}],"stream":true,"thinking":{"type":"adaptive","display":"summarized"},"output_config":{"effort":"high"},"tools":[{"name":"get_weather","description":"Get the current weather for a city.","input_schema":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"],"additionalProperties":false}}],"tool_choice":{"type":"auto"}},"options":{}}
+{"kind":"chunk","call":1,"data":{"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_fixture0003","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":592,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":3,"service_tier":null,"inference_geo":null,"speed":"standard"},"diagnostics":null}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"","signature":""}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"The result"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" is sunny at"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" 31°C, so there"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"'s no need"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" for an umbrella. I"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"'ll keep the answer short"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"."}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"\n\n"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"fixture-opaque-0002"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_stop","index":0}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_start","index":1,"content_block":{"type":"text","text":""}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"You"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" don't need an umbrella"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" in"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Lahore. It's s"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"unny and"}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" 31°C."}}}
+{"kind":"chunk","call":1,"data":{"type":"content_block_stop","index":1}}
+{"kind":"chunk","call":1,"data":{"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":592,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":54,"output_tokens_details":{"thinking_tokens":26}}}}
+{"kind":"chunk","call":1,"data":{"type":"message_stop"}}
+{"kind":"end","call":1,"outcome":"completed"}

@@ -1,0 +1,28 @@
+{"kind":"meta","format":1,"provider":"anthropic","case":"reasoning","api":"messages","sdk":"@anthropic-ai/sdk@1.9.0","model":"claude-haiku-5-5","recordedOn":"2026-11-17"}
+{"kind":"call","index":0,"request":{"model":"claude-haiku-5-5","max_tokens":4096,"system":"You are a concise assistant used to record API test fixtures.","messages":[{"role":"user","content":"A bat and a ball cost 1.10 in total. The bat costs 1.00 more than the ball. How much does the ball cost? Answer with just the amount."}],"stream":true,"thinking":{"type":"adaptive","display":"summarized"},"output_config":{"effort":"high"}},"options":{}}
+{"kind":"chunk","call":0,"data":{"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_fixture0001","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":78,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":5,"service_tier":null,"inference_geo":null,"speed":"standard"},"diagnostics":null}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"","signature":""}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"I'm sett"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"ling on the "}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"ball cost"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"ing $0.05, so"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" the"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" answer is just the"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" amount, $0.05 "}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"or 5 cents. I"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"'m we"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"ighing whether to include the d"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"ollar sign and"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" le"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"aning toward the plain \""}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"$0.05\"."}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"\n\n"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"fixture-opaque-0001"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_stop","index":0}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_start","index":1,"content_block":{"type":"text","text":""}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"$"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"0.05"}}}
+{"kind":"chunk","call":0,"data":{"type":"content_block_stop","index":1}}
+{"kind":"chunk","call":0,"data":{"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":78,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":59,"output_tokens_details":{"thinking_tokens":53}}}}
+{"kind":"chunk","call":0,"data":{"type":"message_stop"}}
+{"kind":"end","call":0,"outcome":"completed"}
