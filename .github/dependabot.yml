@@ -1,0 +1,16 @@
+# Keeps pinned action SHAs and exact dev dependency pins current. A cooldown holds new releases
+# back for a week, so a compromised release has time to be caught before it is proposed here.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
