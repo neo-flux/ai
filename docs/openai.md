@@ -29,7 +29,7 @@ When `reasoning` is set and `store` is false, `include` defaults to `["reasoning
 
 Strict schemas are off by default. Strict mode requires every property to be listed in `required` and `additionalProperties: false`, which many Zod and Valibot schemas don't produce. Turn it on when your schemas meet those rules.
 
-`body` may not set `model`, `input`, `instructions`, `stream`, `tools`, `tool_choice`, `text`, `max_output_tokens` or `temperature`. The typed options above win over the same keys in `body`. Treat `body` as trusted configuration.
+`body` may not set `model`, `input`, `instructions`, `stream`, `tools`, `tool_choice`, `text`, `max_output_tokens` or `temperature`. The typed options above win over the same keys in `body`. A `store` or `include` set only in `body` is kept, rather than replaced by the defaults. Treat `body` as trusted configuration.
 
 The adapter leaves OpenAI's stream obfuscation on. It's a mitigation against a network side channel, and you can turn it off with `body: { stream_options: { include_obfuscation: false } }`.
 
@@ -37,7 +37,7 @@ The adapter leaves OpenAI's stream obfuscation on. It's a mitigation against a n
 
 - System messages are joined into `instructions`.
 - Images and files are sent as data URLs. Image bytes need a `mediaType`.
-- Tool results are `function_call_output` items.
+- Tool results are `function_call_output` items. That item has no error flag, so `isError` isn't sent. Say so in the result text if the model needs to know.
 - Reasoning and tool calls from an earlier OpenAI turn are sent back as the exact output items OpenAI returned, including encrypted reasoning. Reasoning from other providers is dropped.
 
 ## Reasoning
