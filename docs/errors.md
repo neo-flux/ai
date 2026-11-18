@@ -42,6 +42,8 @@ When `model` is a list, the library tries the next model only if the error has `
 
 When your own signal aborts or times out, the error has `failover: false`, because the next model can't meet a deadline that has already passed.
 
+Each model in the chain gets the full request: messages, tools, and your `providerOptions`. An `auth` or `billing` error at one provider sends that request on to the next, so list only providers you're willing to send it to. HTTP 403 counts as `auth`. Some servers also use 403 for other refusals, such as moderation or region blocks. If one of yours does, map it in the adapter's `classifyError` (for `openaiCompatible`, the `classifyError` quirk) to a code that doesn't fail over, such as `content_filter`.
+
 ## What an AIError never contains
 
 `message` is built only from the code, provider and status, for example `rate_limit (anthropic, HTTP 429)`. It never includes API keys, request bodies, message content or the provider's error text. The same goes for `toString()`, `JSON.stringify` (which uses `toJSON()`), `console.log` and `util.inspect`.
