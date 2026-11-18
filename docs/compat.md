@@ -19,7 +19,7 @@ The library never builds clients, reads environment variables or sets base URLs.
 ## Options
 
 - `client`: an `openai` client. The adapter calls only `client.chat.completions.create(params, { signal })` and iterates the stream.
-- `provider`: default `openai-compatible`. 1 to 64 letters, digits, or `_ . : -`. Give each instance its own name. The name keys `providerOptions` and the reasoning that is sent back, so two instances with the same name share both.
+- `provider`: default `openai-compatible`. 1 to 64 letters, digits, or `_ . : -`. Give each instance its own name. The name keys `providerOptions` and the reasoning that is sent back, so two instances with the same name share both. Don't reuse a built-in adapter's name (`openai`, `anthropic`, `deepseek`) unless you want that adapter's stored reasoning sent to this server.
 - `quirks`: server differences, below.
 
 Model options go in the second argument, `local("my-model", { body: { top_k: 40 } })`, or per call in `providerOptions: { local: { body: { top_k: 40 } } }`. Call options win key by key. `body` may not set a field the adapter derives from the request: `model`, `messages`, `stream`, `stream_options`, `tools`, `tool_choice`, `response_format`, `max_tokens`, `max_completion_tokens`, `temperature`, `n`, or the legacy `functions` and `function_call`. Trying is an `invalid_request` error before anything is sent. Every other `body` field is sent as is, including ones that change what the server stores or who it attributes the request to. Treat `body` as trusted configuration, never as end-user input.

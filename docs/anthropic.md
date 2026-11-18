@@ -26,7 +26,7 @@ Pass options to the model, `claude("id", { ... })`, or per call in `providerOpti
 
 **`max_tokens` defaults to 4096.** The API requires it. The adapter uses the call's `maxOutputTokens`, then the `maxTokens` option, then 4096 (`DEFAULT_MAX_TOKENS`).
 
-`body` may not set `model`, `messages`, `system`, `stream`, `tools`, `tool_choice`, `max_tokens`, `temperature` or `output_config`. The typed options win over the same keys in `body`. Treat `body` as trusted configuration.
+`body` may not set `model`, `messages`, `system`, `stream`, `tools`, `tool_choice`, `max_tokens`, `temperature` or `output_config`. The typed options win over the same keys in `body`. Treat `body` as trusted configuration. It can set fields like `metadata` and `mcp_servers`, which carry credentials, so never build it from end-user input.
 
 Some models reject a forced `toolChoice` (`"required"` or `{ name }`) or certain thinking settings with HTTP 400. That arrives as `invalid_request`, without falling back.
 
@@ -42,7 +42,7 @@ Some models reject a forced `toolChoice` (`"required"` or `{ name }`) or certain
 
 Thinking streams as `reasoning-delta` events. Each thinking block ends with a `reasoning-end` that carries its signature. With `display: "omitted"`, a block has no text, only a signature. You still get an empty `reasoning-delta` and the `reasoning-end`, so the block is kept. Redacted thinking is kept the same way.
 
-When you send the assistant message back, its thinking blocks go back exactly as Anthropic sent them, signature included, as the API requires. Reasoning from other providers is never sent to Anthropic.
+When you send the assistant message back, each thinking block is rebuilt from the stored reasoning part, its text and the signature in its metadata, as the API requires. The library doesn't verify them, so keep stored history unedited. The API rejects a changed thinking block. Signatures and redacted thinking are opaque blobs from Anthropic, kept in your history like any other message data. A thinking block that arrives without a signature can't be sent back, so it carries no metadata. Reasoning from other providers is never sent to Anthropic.
 
 ## Not supported yet
 
