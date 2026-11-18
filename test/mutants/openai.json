@@ -24,22 +24,22 @@
     "id": "O4",
     "file": "src/openai/request.ts",
     "description": "reasoning item not sent back",
-    "find": "      if (item !== undefined) items.push(item);\n    } else if",
-    "replace": "    } else if"
+    "find": "      if (item === undefined) continue;\n      flush();\n      items.push(item);",
+    "replace": "      if (item === undefined) continue;\n      flush();"
   },
   {
     "id": "O5",
     "file": "src/openai/request.ts",
     "description": "tool call item not used verbatim",
-    "find": "    } else if (item !== undefined) {\n      items.push(item);\n    } else {",
+    "find": "    } else if (item !== undefined) {\n      flush();\n      items.push(item);\n    } else {",
     "replace": "    } else {"
   },
   {
     "id": "O6",
     "file": "src/openai/request.ts",
-    "description": "assistant text not flushed before an item",
-    "find": "    flush();\n    const item = ownItem(part.providerMetadata);",
-    "replace": "    const item = ownItem(part.providerMetadata);"
+    "description": "assistant text not flushed before a tool-call item",
+    "find": "    } else if (item !== undefined) {\n      flush();\n      items.push(item);",
+    "replace": "    } else if (item !== undefined) {\n      items.push(item);"
   },
   {
     "id": "O7",
@@ -129,15 +129,15 @@
     "id": "O19",
     "file": "src/openai/request.ts",
     "description": "store defaults to true",
-    "find": "typeof options.store === \"boolean\" ? options.store : false;",
-    "replace": "typeof options.store === \"boolean\" ? options.store : true;"
+    "find": "  else params.store ??= false;",
+    "replace": "  else params.store ??= true;"
   },
   {
     "id": "O20",
     "file": "src/openai/request.ts",
     "description": "store option ignored",
-    "find": "typeof options.store === \"boolean\" ? options.store : false;",
-    "replace": "false;"
+    "find": "  if (typeof options.store === \"boolean\") params.store = options.store;\n",
+    "replace": ""
   },
   {
     "id": "O21",
@@ -157,8 +157,8 @@
     "id": "O23",
     "file": "src/openai/request.ts",
     "description": "include added even when stored",
-    "find": "options.reasoning !== undefined && params.store === false",
-    "replace": "options.reasoning !== undefined"
+    "find": "    params.store === false\n  ) {",
+    "replace": "    true\n  ) {"
   },
   {
     "id": "O24",
@@ -177,9 +177,9 @@
   {
     "id": "O26",
     "file": "src/openai/request.ts",
-    "description": "body overrides typed store",
-    "find": "  params.store = typeof options.store",
-    "replace": "  params.store ??= typeof options.store"
+    "description": "body store replaced by the default",
+    "find": "  else params.store ??= false;",
+    "replace": "  else params.store = false;"
   },
   {
     "id": "O27",
@@ -276,8 +276,8 @@
     "id": "O40",
     "file": "src/openai/stream.ts",
     "description": "completed with calls reported as stop",
-    "find": "            ? this.#ended > 0\n              ? \"tool-calls\"\n              : \"stop\"",
-    "replace": "            ? \"stop\""
+    "find": "reason === \"completed\" ? (this.#ended > 0 ? \"tool-calls\" : \"stop\") : reason",
+    "replace": "reason === \"completed\" ? \"stop\" : reason"
   },
   {
     "id": "O41",
@@ -404,5 +404,75 @@
     "description": "classifyError not wired",
     "find": "    classifyError: classifyOpenAIError,",
     "replace": "    classifyError: undefined,"
+  },
+  {
+    "id": "O59",
+    "file": "src/openai/request.ts",
+    "description": "dropped reasoning splits text",
+    "find": "      if (item === undefined) continue;\n      flush();",
+    "replace": "      flush();\n      if (item === undefined) continue;"
+  },
+  {
+    "id": "O60",
+    "file": "src/openai/request.ts",
+    "description": "body include replaced by the default",
+    "find": "    params.include === undefined &&\n",
+    "replace": ""
+  },
+  {
+    "id": "O61",
+    "file": "src/openai/request.ts",
+    "description": "typed reasoning loses to body",
+    "find": "  if (options.reasoning !== undefined) params.reasoning = options.reasoning;",
+    "replace": "  if (options.reasoning !== undefined) params.reasoning ??= options.reasoning;"
+  },
+  {
+    "id": "O62",
+    "file": "src/openai/request.ts",
+    "description": "empty tool list sent",
+    "find": "  if (request.tools !== undefined && request.tools.length > 0) {",
+    "replace": "  if (request.tools !== undefined) {"
+  },
+  {
+    "id": "O63",
+    "file": "src/openai/request.ts",
+    "description": "empty assistant string sent",
+    "find": "    return message.content === \"\" ? [] : [{ role: \"assistant\", content: message.content }];",
+    "replace": "    return [{ role: \"assistant\", content: message.content }];"
+  },
+  {
+    "id": "O64",
+    "file": "src/openai/stream.ts",
+    "description": "duplicate call ids start twice",
+    "find": "    if (this.#seen.has(callId)) return undefined;\n",
+    "replace": ""
+  },
+  {
+    "id": "O65",
+    "file": "src/openai/stream.ts",
+    "description": "calls without an item id dropped",
+    "find": "    const itemId = nonEmpty(item.id) ?? callId;",
+    "replace": "    const itemId = nonEmpty(item.id);\n    if (itemId === undefined) return undefined;"
+  },
+  {
+    "id": "O66",
+    "file": "src/openai/stream.ts",
+    "description": "tool call doesn't close the reasoning block",
+    "find": "    this.#blockOpen = false;\n    out.push({ type: \"tool-call-start\", id: callId, name });",
+    "replace": "    out.push({ type: \"tool-call-start\", id: callId, name });"
+  },
+  {
+    "id": "O67",
+    "file": "src/openai/stream.ts",
+    "description": "invalid token counts accepted",
+    "find": "  typeof value === \"number\" && Number.isSafeInteger(value) && value >= 0 ? value : undefined;",
+    "replace": "  typeof value === \"number\" ? value : undefined;"
+  },
+  {
+    "id": "O68",
+    "file": "src/openai/stream.ts",
+    "description": "stream error param dropped",
+    "find": "    param: body.param,",
+    "replace": "    param: undefined,"
   }
 ]

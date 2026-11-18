@@ -64,7 +64,10 @@ export class ResponsesTranslator {
   #blockOpen = false;
   #calls = new Map<string, Call>();
   #ended = 0;
-  #terminal: { reason: FinishReason; usage: UsageReport | undefined } | undefined;
+  // Call ids already started, so a duplicate `done` or a reused call_id can't start a call twice.
+  #seen = new Set<string>();
+  // "tool-calls" is decided in end(), after calls left open are closed.
+  #terminal: { reason: FinishReason | "completed"; usage: UsageReport | undefined } | undefined;
 
   push(event: unknown): StreamEvent[] {
     if (!isRecord(event)) return [];
@@ -104,9 +107,7 @@ export class ResponsesTranslator {
         const details = isRecord(response.incomplete_details) ? response.incomplete_details : {};
         const reason =
           event.type === "response.completed"
-            ? this.#ended > 0
-              ? "tool-calls"
-              : "stop"
+            ? "completed"
             : typeof details.reason === "string" && Object.hasOwn(INCOMPLETE, details.reason)
               ? (INCOMPLETE[details.reason] as FinishReason)
               : "other";
@@ -136,7 +137,11 @@ export class ResponsesTranslator {
     this.#calls.clear();
     const { usage } = this.#terminal;
     if (usage !== undefined) events.push({ type: "usage", usage });
-    events.push({ type: "finish", reason: this.#terminal.reason });
+    const { reason } = this.#terminal;
+    events.push({
+      type: "finish",
+      reason: reason === "completed" ? (this.#ended > 0 ? "tool-calls" : "stop") : reason,
+    });
     return { events, error: undefined };
   }
 
@@ -165,12 +170,16 @@ export class ResponsesTranslator {
   }
 
   #startCall(item: Json, out: StreamEvent[]): Call | undefined {
-    const itemId = typeof item.id === "string" ? item.id : undefined;
     const callId = nonEmpty(item.call_id);
     const name = nonEmpty(item.name);
-    if (itemId === undefined || callId === undefined || name === undefined) return undefined;
+    if (callId === undefined || name === undefined) return undefined;
+    // A compatible server may omit the item id; argument deltas can't be routed then, but the
+    // call still arrives whole on `done`.
+    const itemId = nonEmpty(item.id) ?? callId;
     const existing = this.#calls.get(itemId);
     if (existing !== undefined) return existing;
+    if (this.#seen.has(callId)) return undefined;
+    this.#seen.add(callId);
     const call = { callId, emitted: false };
     this.#calls.set(itemId, call);
     this.#blockOpen = false;
@@ -197,7 +206,7 @@ export class ResponsesTranslator {
     if (!call.emitted && args !== undefined) {
       out.push({ type: "tool-call-delta", id: call.callId, inputDelta: args });
     }
-    this.#calls.delete(item.id as string);
+    this.#calls.delete(nonEmpty(item.id) ?? call.callId);
     this.#ended++;
     out.push({
       type: "tool-call-end",

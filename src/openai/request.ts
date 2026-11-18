@@ -69,14 +69,18 @@ function assistantItems(message: AssistantMessage): Json[] {
       text += part.text;
       continue;
     }
-    flush();
     const item = ownItem(part.providerMetadata);
     if (part.type === "reasoning") {
       // Only OpenAI's own reasoning items can go back; their encrypted content is opaque to us.
-      if (item !== undefined) items.push(item);
+      // Dropped reasoning doesn't split the text around it.
+      if (item === undefined) continue;
+      flush();
+      items.push(item);
     } else if (item !== undefined) {
+      flush();
       items.push(item);
     } else {
+      flush();
       const args = typeof part.input === "string" ? part.input : JSON.stringify(part.input);
       items.push({
         type: "function_call",
@@ -153,11 +157,16 @@ export function toResponsesParams(request: ModelRequest, modelRef: ModelRef): Js
   }
   // The typed options below win over the same keys in body. Callers send the whole history every
   // turn, so storing responses on OpenAI's side adds retention and nothing else.
-  params.store = typeof options.store === "boolean" ? options.store : false;
+  if (typeof options.store === "boolean") params.store = options.store;
+  else params.store ??= false;
   if (options.reasoning !== undefined) params.reasoning = options.reasoning;
   if (Array.isArray(options.include)) {
     params.include = options.include;
-  } else if (options.reasoning !== undefined && params.store === false) {
+  } else if (
+    params.include === undefined &&
+    options.reasoning !== undefined &&
+    params.store === false
+  ) {
     // Without storage, reasoning can only go back to the model as its encrypted content.
     params.include = ["reasoning.encrypted_content"];
   }

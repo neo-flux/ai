@@ -324,3 +324,84 @@ describe("toResponsesParams: mutation follow-ups", () => {
     expect(out.input).toEqual([{ role: "user", content: "q" }]);
   });
 });
+
+describe("toResponsesParams: audit follow-ups", () => {
+  test("typed reasoning and include win over body", () => {
+    const out = params(
+      { messages: [q] },
+      {
+        reasoning: { effort: "low" },
+        include: ["a"],
+        body: { reasoning: { effort: "high" }, include: ["b"] },
+      },
+    );
+    expect(out.reasoning).toEqual({ effort: "low" });
+    expect(out.include).toEqual(["a"]);
+  });
+
+  test("store and include set only in body are kept instead of the defaults", () => {
+    const out = params(
+      { messages: [q] },
+      { reasoning: { effort: "low" }, body: { store: true, include: ["x"] } },
+    );
+    expect(out.store).toBe(true);
+    expect(out.include).toEqual(["x"]);
+  });
+
+  test("undefined and __proto__ body keys are skipped", () => {
+    const body = JSON.parse('{"__proto__": {"polluted": true}, "safe": 1}');
+    body.gone = undefined;
+    const out = params({ messages: [q] }, { body });
+    expect(Object.hasOwn(out, "gone")).toBe(false);
+    expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+    expect(out.safe).toBe(1);
+  });
+
+  test("a tool call with undefined input sends {}", () => {
+    const out = params({
+      messages: [
+        q,
+        {
+          role: "assistant",
+          content: [{ type: "tool-call", id: "c", name: "f", input: undefined }],
+        },
+        { role: "tool", toolCallId: "c", toolName: "f", content: "r" },
+      ],
+    });
+    expect((out.input as unknown[])[1]).toEqual({
+      type: "function_call",
+      call_id: "c",
+      name: "f",
+      arguments: "{}",
+    });
+  });
+
+  test("an empty assistant string and an empty tool list send nothing", () => {
+    const out = params({ messages: [q, { role: "assistant", content: "" }, q], tools: [] });
+    expect(out.input).toEqual([
+      { role: "user", content: "q" },
+      { role: "user", content: "q" },
+    ]);
+    expect("tools" in out).toBe(false);
+  });
+
+  test("a dropped reasoning part doesn't split the text around it", () => {
+    const out = params({
+      messages: [
+        q,
+        {
+          role: "assistant",
+          content: [
+            { type: "text", text: "a" },
+            { type: "reasoning", text: "theirs", providerMetadata: { anthropic: {} } },
+            { type: "text", text: "b" },
+          ],
+        },
+      ],
+    });
+    expect(out.input).toEqual([
+      { role: "user", content: "q" },
+      { role: "assistant", content: "ab" },
+    ]);
+  });
+});

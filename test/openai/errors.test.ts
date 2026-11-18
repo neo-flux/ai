@@ -65,3 +65,23 @@ describe("classifyOpenAIError: mutation follow-ups", () => {
     expect(map(http(503, "insufficient_quota")).code).toBe("provider_unavailable");
   });
 });
+
+describe("classifyOpenAIError: stream failures end to end", () => {
+  test("what the translator throws for response.failed is classified by its code", async () => {
+    const { ResponsesTranslator } = await import("../../src/openai/stream.ts");
+    let thrown: unknown;
+    try {
+      new ResponsesTranslator().push({
+        type: "response.failed",
+        response: { error: { code: "rate_limit_exceeded", message: "m" } },
+      });
+    } catch (e) {
+      thrown = e;
+    }
+    expect(map(thrown)).toMatchObject({
+      code: "rate_limit",
+      providerCode: "rate_limit_exceeded",
+      status: undefined,
+    });
+  });
+});

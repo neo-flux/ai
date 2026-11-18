@@ -353,3 +353,105 @@ describe("ResponsesTranslator: mutation follow-ups", () => {
     );
   });
 });
+
+describe("ResponsesTranslator: audit follow-ups", () => {
+  test("a tool call between reasoning deltas and the reasoning done keeps the order valid", () => {
+    const final = reasoningItem("rs_1");
+    const events = run([
+      added(reasoningItem("rs_1")),
+      {
+        type: "response.reasoning_summary_text.delta",
+        item_id: "rs_1",
+        summary_index: 0,
+        delta: "r",
+      },
+      added(fcItem(1)),
+      done(final),
+      done(fcItem(1, "{}")),
+      completed(),
+    ]);
+    expect(types(events).slice(0, 4)).toEqual([
+      "reasoning-delta",
+      "tool-call-start",
+      "reasoning-delta",
+      "reasoning-end",
+    ]);
+  });
+
+  test("each reasoning block carries its own item", () => {
+    const a = reasoningItem("rs_1", { encrypted_content: "A" });
+    const b = reasoningItem("rs_2", { encrypted_content: "B" });
+    const events = run([added(a), done(a), text("x"), added(b), done(b), completed()]);
+    expect(events.filter((e) => e.type === "reasoning-end")).toEqual([
+      { type: "reasoning-end", providerMetadata: { openai: { item: a } } },
+      { type: "reasoning-end", providerMetadata: { openai: { item: b } } },
+    ]);
+  });
+
+  test("stream errors keep code, type and param, and have no status", () => {
+    const t = new ResponsesTranslator();
+    let thrown: unknown;
+    try {
+      t.push({
+        type: "error",
+        code: "invalid_prompt",
+        message: "m",
+        param: "input",
+        type_: undefined,
+      });
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toMatchObject({ status: undefined, code: "invalid_prompt", param: "input" });
+    try {
+      t.push({
+        type: "response.failed",
+        response: { error: { code: "server_error", type: "server_error", message: "m" } },
+      });
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toMatchObject({
+      code: "server_error",
+      type: "server_error",
+      error: { code: "server_error" },
+    });
+    expect(() => t.push({ type: "response.failed", response: {} })).toThrow();
+  });
+
+  test("invalid token counts are dropped", () => {
+    const events = run([text("x"), completed({ input_tokens: -1, output_tokens: 1.5 })]);
+    const u = (
+      events.find((e) => e.type === "usage") as unknown as { usage: Record<string, unknown> }
+    ).usage;
+    expect(u.inputTokens).toBeUndefined();
+    expect(u.outputTokens).toBeUndefined();
+  });
+
+  test("a call still open at completed counts as a tool call", () => {
+    const events = run([added(fcItem(1)), argsDelta(1, "{}"), completed()]);
+    expect(events.at(-1)).toEqual({ type: "finish", reason: "tool-calls" });
+  });
+
+  test("a duplicate done and a reused call_id don't restart a call", () => {
+    const events = run([
+      added(fcItem(1)),
+      done(fcItem(1, "{}")),
+      done(fcItem(1, "{}")),
+      added({ ...fcItem(2), call_id: "call_1" }),
+      completed(),
+    ]);
+    expect(events.filter((e) => e.type === "tool-call-start")).toHaveLength(1);
+  });
+
+  test("a function call without an item id is keyed by its call_id", () => {
+    const { id: _, ...noId } = fcItem(1, '{"a":1}');
+    const events = run([done(noId), completed()]);
+    expect(types(events).slice(0, 3)).toEqual([
+      "tool-call-start",
+      "tool-call-delta",
+      "tool-call-end",
+    ]);
+    expect(events.at(-1)).toEqual({ type: "finish", reason: "tool-calls" });
+  });
+});
