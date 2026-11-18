@@ -490,3 +490,32 @@ describe("toResponsesParams: security review follow-ups", () => {
     });
   });
 });
+
+describe("toResponsesParams: tool call metadata type", () => {
+  test("id and status come only from a function_call item", () => {
+    const other = { type: "message", id: "msg_1", status: "completed" };
+    const out = params({
+      messages: [
+        q,
+        {
+          role: "assistant",
+          content: [
+            {
+              type: "tool-call",
+              id: "c",
+              name: "f",
+              input: {},
+              providerMetadata: { openai: { item: other } },
+            },
+          ],
+        },
+      ],
+    });
+    expect((out.input as unknown[])[1]).toEqual({
+      type: "function_call",
+      call_id: "c",
+      name: "f",
+      arguments: "{}",
+    });
+  });
+});
