@@ -100,6 +100,7 @@ describe("publish workflow", () => {
     const build = job(read(file), "build");
     expect(runs(build)).toEqual([
       "bun install --frozen-lockfile --ignore-scripts",
+      'git merge-base --is-ancestor "$GITHUB_SHA" origin/main',
       `version="$(bun -e 'console.log(require("./package.json").version)')"`,
       'if [ "$GITHUB_REF_NAME" != "v$version" ]; then',
       'echo "tag $GITHUB_REF_NAME does not match package.json version $version" >&2',
@@ -110,18 +111,21 @@ describe("publish workflow", () => {
       "rm -rf dist out && bun run build",
       "mkdir out && bun pm pack --destination out",
       "tar -tzf out/*.tgz | grep -qx package/dist/index.js",
-      "bunx publint run out/*.tgz --strict",
-      "bunx attw out/*.tgz --profile esm-only",
+      "bunx --no-install publint run out/*.tgz --strict",
+      "bunx --no-install attw out/*.tgz --profile esm-only",
       'echo "sha256=$(sha256sum out/*.tgz | cut -d " " -f 1)" >> "$GITHUB_OUTPUT"',
     ]);
     expect(build).toContain("          no-cache: true");
+    // The whole history is needed to check that the tag's commit is on main.
+    expect(build).toContain("          fetch-depth: 0");
     expect(build).toContain("    outputs:");
   });
 
   test("the publish job installs nothing and checks the hash from the build job's output", () => {
     const publish = job(read(file), "publish");
     expect(runs(publish)).toEqual([
-      'echo "${{ needs.build.outputs.sha256 }}  $(ls out/*.tgz)" | sha256sum --check --strict',
+      'printf "%s\\n" "$SHA256" | grep -qxE "[0-9a-f]{64}"',
+      'echo "$SHA256  $(ls out/*.tgz)" | sha256sum --check --strict',
       'npm_version="$(npm --version)"',
       'if [ "$(printf \'%s\\n\' 11.5.1 "$npm_version" | sort -V | head -n1)" != "11.5.1" ]; then',
       'echo "npm $npm_version is older than 11.5.1, which trusted publishing needs" >&2',
@@ -133,5 +137,10 @@ describe("publish workflow", () => {
       "actions/download-artifact",
       "actions/setup-node",
     ]);
+    // The hash reaches the shell through env, never interpolated into the script.
+    expect(publish).toContain("          SHA256: ${{ needs.build.outputs.sha256 }}");
+    expect(runs(publish).join("\n")).not.toContain("${{");
+    // npm uses OIDC and its default registry, so no .npmrc with a token placeholder is written.
+    expect(publish.join("\n")).not.toContain("registry-url");
   });
 });
