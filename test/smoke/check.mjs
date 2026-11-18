@@ -145,3 +145,44 @@ export async function checkOpenAI(root, testing, openai) {
   if (result.text !== "hi" || result.usage.inputTokens !== 3) throw new Error("openai result");
   if (client.calls[0]?.params.store !== false) throw new Error("openai request");
 }
+
+// Runs the Anthropic adapter on an inline Messages API replay.
+export async function checkAnthropic(root, testing, anthropic) {
+  const chunk = (data) => ({ kind: "chunk", call: 0, data });
+  const lines = [
+    {
+      kind: "meta",
+      format: 1,
+      provider: "anthropic",
+      case: "text",
+      api: "messages",
+      sdk: "none@0",
+      model: "smoke",
+      recordedOn: "2026-01-01",
+    },
+    { kind: "call", index: 0, request: {}, options: {} },
+    chunk({ type: "message_start", message: { usage: { input_tokens: 3, output_tokens: 1 } } }),
+    chunk({ type: "content_block_start", index: 0, content_block: { type: "text", text: "" } }),
+    chunk({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text: "hi" } }),
+    chunk({ type: "content_block_stop", index: 0 }),
+    chunk({
+      type: "message_delta",
+      delta: { stop_reason: "end_turn" },
+      usage: { output_tokens: 2 },
+    }),
+    chunk({ type: "message_stop" }),
+    { kind: "end", call: 0, outcome: "completed" },
+  ];
+  const fixture = testing.parseFixture(lines.map((line) => JSON.stringify(line)).join("\n"));
+  const client = testing.replayClient(fixture);
+  const stream = root.streamText({
+    model: anthropic.anthropic({ client })("smoke"),
+    messages: [{ role: "user", content: "hi" }],
+  });
+  const types = [];
+  for await (const event of testing.checkEventOrder(stream)) types.push(event.type);
+  if (types.join(",") !== "text-delta,usage,finish") throw new Error(`anthropic events: ${types}`);
+  const result = await stream.result;
+  if (result.text !== "hi" || result.usage.outputTokens !== 2) throw new Error("anthropic result");
+  if (client.calls[0]?.params.max_tokens !== 4096) throw new Error("anthropic request");
+}
