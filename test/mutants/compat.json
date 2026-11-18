@@ -94,7 +94,7 @@
     "id": "X14",
     "file": "src/compat/request.ts",
     "description": "reasoning echo ignores the provider key",
-    "find": "      if (part.providerMetadata?.[provider] !== undefined) reasoning.push(part.text);",
+    "find": "      if (meta !== undefined && Object.hasOwn(meta, provider)) reasoning.push(part.text);",
     "replace": "      reasoning.push(part.text);"
   },
   {
@@ -304,8 +304,8 @@
     "id": "X44",
     "file": "src/compat/stream.ts",
     "description": "missing id not filled",
-    "find": "      call.id ??= `call_${index}`;\n",
-    "replace": ""
+    "find": "      if (call.id === undefined) {\n        const taken",
+    "replace": "      if (call.id === undefined && false) {\n        const taken"
   },
   {
     "id": "X45",
@@ -586,5 +586,33 @@
     "description": "body beats typed options",
     "find": "    return { ...(options.body as Record<string, unknown> | undefined), ...fields };",
     "replace": "    return { ...fields, ...(options.body as Record<string, unknown> | undefined) };"
+  },
+  {
+    "id": "X85",
+    "file": "src/compat/request.ts",
+    "description": "reasoning echo reads inherited metadata keys",
+    "find": "meta !== undefined && Object.hasOwn(meta, provider)",
+    "replace": "meta !== undefined && meta[provider] !== undefined"
+  },
+  {
+    "id": "X86",
+    "file": "src/compat/request.ts",
+    "description": "providerOptions read through inherited keys",
+    "find": "callOptions !== undefined && Object.hasOwn(callOptions, provider)\n      ? callOptions[provider]\n      : undefined,",
+    "replace": "callOptions?.[provider],"
+  },
+  {
+    "id": "X87",
+    "file": "src/compat/quirks.ts",
+    "description": "legacy functions field not reserved",
+    "find": "  \"functions\",\n",
+    "replace": ""
+  },
+  {
+    "id": "X88",
+    "file": "src/compat/stream.ts",
+    "description": "generated id may collide with a server id",
+    "find": "        while (taken.has(id)) id = `${id}_`;\n",
+    "replace": ""
   }
 ]

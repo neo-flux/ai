@@ -370,3 +370,38 @@ describe("toChatParams: audit follow-ups", () => {
     expect(calls?.[0]?.function.arguments).toBe("{}");
   });
 });
+
+describe("toChatParams: security review follow-ups", () => {
+  const own = (name: string) =>
+    resolveQuirks({ reasoningField: "reasoning_content", echoReasoning: true });
+
+  test("a provider named like an Object.prototype key echoes only its own reasoning", () => {
+    for (const name of ["constructor", "toString", "valueOf", "hasOwnProperty"]) {
+      const out = toChatParams(
+        {
+          messages: [
+            { role: "user", content: "q" },
+            {
+              role: "assistant",
+              content: [{ type: "reasoning", text: "theirs", providerMetadata: { anthropic: {} } }],
+            },
+          ],
+          providerOptions: { other: { body: { x: 1 } } },
+        },
+        model(),
+        own(name),
+        name,
+      );
+      expect((out.messages as Record<string, unknown>[])[1]).toEqual({
+        role: "assistant",
+        content: "",
+      });
+      expect("x" in out).toBe(false);
+    }
+  });
+
+  test("body may not set the legacy function-calling fields", () => {
+    invalid(() => params({ messages: [user("q")] }, {}, { body: { functions: [] } }));
+    invalid(() => params({ messages: [user("q")] }, {}, { body: { function_call: "auto" } }));
+  });
+});

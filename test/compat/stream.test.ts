@@ -491,3 +491,18 @@ describe("ChunkTranslator: audit follow-ups", () => {
     ]);
   });
 });
+
+describe("ChunkTranslator: security review follow-ups", () => {
+  test("a generated id never collides with an id the server sent", () => {
+    const events = run([
+      chunk({ tool_calls: [{ index: 1, id: "call_0", function: { name: "f", arguments: "{}" } }] }),
+      chunk({ tool_calls: [{ index: 0, function: { name: "g", arguments: "{}" } }] }),
+      chunk({}, "tool_calls"),
+    ]);
+    const ids = events
+      .filter((e) => e.type === "tool-call-start")
+      .map((e) => (e as { id: string }).id);
+    expect(new Set(ids).size).toBe(2);
+    expect(ids).toContain("call_0");
+  });
+});

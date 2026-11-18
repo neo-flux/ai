@@ -86,4 +86,7 @@ export const RESERVED_KEYS: readonly string[] = [
   "max_completion_tokens",
   "temperature",
   "n",
+  // The legacy function-calling fields would override the derived tools.
+  "functions",
+  "function_call",
 ];

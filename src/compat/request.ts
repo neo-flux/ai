@@ -55,7 +55,8 @@ function assistant(message: AssistantMessage, quirks: ResolvedQuirks, provider: 
     if (part.type === "text") text += part.text;
     else if (part.type === "reasoning") {
       // Only this provider's own reasoning goes back; another model's thinking doesn't belong here.
-      if (part.providerMetadata?.[provider] !== undefined) reasoning.push(part.text);
+      const meta = part.providerMetadata;
+      if (meta !== undefined && Object.hasOwn(meta, provider)) reasoning.push(part.text);
     } else {
       const args = typeof part.input === "string" ? part.input : JSON.stringify(part.input);
       toolCalls.push({
@@ -111,7 +112,14 @@ function optionsOf(value: unknown, provider: string, where: string): Json {
 /** Model options, then call options, field by field. `body` merges key by key. */
 function mergedOptions(request: ModelRequest, modelRef: ModelRef, provider: string): Json {
   const fromModel = optionsOf(modelRef.options, provider, "model options");
-  const fromCall = optionsOf(request.providerOptions?.[provider], provider, "providerOptions");
+  const callOptions = request.providerOptions;
+  const fromCall = optionsOf(
+    callOptions !== undefined && Object.hasOwn(callOptions, provider)
+      ? callOptions[provider]
+      : undefined,
+    provider,
+    "providerOptions",
+  );
   const merged: Json = { ...fromModel, ...fromCall };
   if (fromModel.body !== undefined || fromCall.body !== undefined) {
     merged.body = { ...(fromModel.body as Json), ...(fromCall.body as Json) };

@@ -102,7 +102,12 @@ export class ChunkTranslator {
       if (call.started) continue;
       if (call.name === undefined) return done(this.#error(undefined));
       // Some servers omit tool call ids; the replacement only has to be unique in this turn.
-      call.id ??= `call_${index}`;
+      if (call.id === undefined) {
+        const taken = new Set(calls.map(([, c]) => c.id));
+        let id = `call_${index}`;
+        while (taken.has(id)) id = `${id}_`;
+        call.id = id;
+      }
       this.#start(call, events);
     }
     for (const [, call] of calls) events.push({ type: "tool-call-end", id: call.id as string });
