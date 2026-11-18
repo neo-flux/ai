@@ -102,3 +102,46 @@ export async function checkDeepSeek(root, testing, deepseek) {
   if (result.text !== "hi" || result.usage.inputTokens !== 3) throw new Error("deepseek result");
   if (client.calls[0]?.params.model !== "smoke") throw new Error("deepseek request");
 }
+
+// Runs the OpenAI adapter on an inline Responses API replay.
+export async function checkOpenAI(root, testing, openai) {
+  const lines = [
+    {
+      kind: "meta",
+      format: 1,
+      provider: "openai",
+      case: "text",
+      api: "responses",
+      sdk: "none@0",
+      model: "smoke",
+      recordedOn: "2026-01-01",
+    },
+    { kind: "call", index: 0, request: {}, options: {} },
+    {
+      kind: "chunk",
+      call: 0,
+      data: { type: "response.output_text.delta", item_id: "m", delta: "hi" },
+    },
+    {
+      kind: "chunk",
+      call: 0,
+      data: {
+        type: "response.completed",
+        response: { usage: { input_tokens: 3, output_tokens: 1 } },
+      },
+    },
+    { kind: "end", call: 0, outcome: "completed" },
+  ];
+  const fixture = testing.parseFixture(lines.map((line) => JSON.stringify(line)).join("\n"));
+  const client = testing.replayClient(fixture);
+  const stream = root.streamText({
+    model: openai.openai({ client })("smoke"),
+    messages: [{ role: "user", content: "hi" }],
+  });
+  const types = [];
+  for await (const event of testing.checkEventOrder(stream)) types.push(event.type);
+  if (types.join(",") !== "text-delta,usage,finish") throw new Error(`openai events: ${types}`);
+  const result = await stream.result;
+  if (result.text !== "hi" || result.usage.inputTokens !== 3) throw new Error("openai result");
+  if (client.calls[0]?.params.store !== false) throw new Error("openai request");
+}

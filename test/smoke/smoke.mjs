@@ -5,7 +5,7 @@ import * as compat from "@neoflux/ai/compat";
 import * as deepseek from "@neoflux/ai/deepseek";
 import * as openai from "@neoflux/ai/openai";
 import * as testing from "@neoflux/ai/testing";
-import { check, checkDeepSeek } from "./check.mjs";
+import { check, checkDeepSeek, checkOpenAI } from "./check.mjs";
 import pkg from "./node_modules/@neoflux/ai/package.json" with { type: "json" };
 
 const entries = {
@@ -34,5 +34,6 @@ for (const [subpath, namespace] of Object.entries(entries)) {
 }
 await check(root, testing).catch((error) => fail(error.message));
 await checkDeepSeek(root, testing, deepseek).catch((error) => fail(error.message));
+await checkOpenAI(root, testing, openai).catch((error) => fail(error.message));
 
 console.log(`ok ${runtime}`);
