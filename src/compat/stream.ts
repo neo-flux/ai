@@ -107,7 +107,11 @@ export class ChunkTranslator {
     }
     for (const [, call] of calls) events.push({ type: "tool-call-end", id: call.id as string });
 
-    const mapped = this.#quirks.finishReasons[this.#finish] ?? STANDARD[this.#finish] ?? "other";
+    // Own keys only: a provider string like "constructor" must not hit Object.prototype.
+    const own = <T>(table: Readonly<Record<string, T>>, key: string): T | undefined =>
+      Object.hasOwn(table, key) ? table[key] : undefined;
+    const mapped =
+      own(this.#quirks.finishReasons, this.#finish) ?? own(STANDARD, this.#finish) ?? "other";
     if (typeof mapped !== "string") return done(this.#error(this.#finish, mapped.error));
     // "tool-calls" without a call would break the ordering rules; report it as "other".
     const reason = mapped === "tool-calls" && calls.length === 0 ? "other" : mapped;

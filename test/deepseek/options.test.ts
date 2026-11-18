@@ -37,11 +37,27 @@ describe("deepseek options and usage", () => {
       messages,
       providerOptions: { deepseek: { reasoningEffort: "max" } },
     });
-    expect(params[0]).toMatchObject({
+    expect(params[0]).toEqual({
+      model: "deepseek-flash",
+      messages: [{ role: "user", content: "q" }],
+      stream: true,
+      stream_options: { include_usage: true },
       thinking: { type: "enabled" },
       reasoning_effort: "max",
       top_p: 0.9,
     });
+  });
+
+  test("typed options win over the same keys in body", async () => {
+    const { params, ds } = recording({ prompt_tokens: 1, completion_tokens: 1 });
+    await generate({
+      model: ds("deepseek-flash", {
+        thinking: "disabled",
+        body: { thinking: { type: "enabled" } },
+      }),
+      messages,
+    });
+    expect(params[0]?.thinking).toEqual({ type: "disabled" });
   });
 
   test("unset options aren't sent", async () => {

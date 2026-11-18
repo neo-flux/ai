@@ -406,3 +406,88 @@ describe("translateStream", () => {
     expect(thrown.code).toBe("provider_unavailable");
   });
 });
+
+describe("ChunkTranslator: audit follow-ups", () => {
+  const call = (index: number, extra: Record<string, unknown>) =>
+    chunk({ tool_calls: [{ index, ...extra }] });
+
+  test("finish reasons that name Object.prototype members are just unknown reasons", () => {
+    for (const finish of ["constructor", "toString", "hasOwnProperty", "__proto__"]) {
+      expect(run([chunk({ content: "x" }, finish)]).at(-1)).toEqual({
+        type: "finish",
+        reason: "other",
+      });
+    }
+  });
+
+  test("an empty finish_reason is not a finish", () => {
+    const t = new ChunkTranslator(resolveQuirks(), "acme");
+    t.push(chunk({ content: "x" }, ""));
+    expect(t.end().error).toMatchObject({ code: "provider_unavailable" });
+  });
+
+  test("negative, fractional and non-numeric token counts are dropped", () => {
+    const events = run([
+      chunk({}, "stop", {
+        prompt_tokens: -1,
+        completion_tokens: 1.5,
+        prompt_tokens_details: { cached_tokens: "3" },
+        completion_tokens_details: { reasoning_tokens: 2 },
+      }),
+    ]);
+    expect(usageOf(events)).toEqual({
+      inputTokens: undefined,
+      outputTokens: undefined,
+      cachedInputTokens: undefined,
+      cacheWriteTokens: undefined,
+      reasoningTokens: 2,
+      inputIncludesCached: true,
+      outputIncludesReasoning: true,
+    });
+  });
+
+  test("a choice without an index is read", () => {
+    const noIndex = { choices: [{ delta: { content: "a" }, finish_reason: "stop" }] };
+    expect(run([noIndex])).toEqual([
+      { type: "text-delta", text: "a" },
+      { type: "finish", reason: "stop" },
+    ]);
+  });
+
+  test("tool calls end in index order even when they arrive out of order", () => {
+    const events = run([
+      call(1, { id: "b", function: { name: "g", arguments: "{}" } }),
+      call(0, { id: "a", function: { name: "f", arguments: "{}" } }),
+      call(3, { function: { name: "late3", arguments: "{}" } }),
+      call(2, { function: { name: "late2", arguments: "{}" } }),
+      chunk({}, "tool_calls"),
+    ]);
+    expect(
+      events.filter((e) => e.type === "tool-call-end").map((e) => (e as { id: string }).id),
+    ).toEqual(["a", "b", "call_2", "call_3"]);
+    expect(
+      events.filter((e) => e.type === "tool-call-start").map((e) => (e as { id: string }).id),
+    ).toEqual(["b", "a", "call_2", "call_3"]);
+  });
+
+  test("reasoning after text opens a second reasoning block", () => {
+    const events = run(
+      [
+        chunk({ reasoning_content: "r1" }),
+        chunk({ content: "t1" }),
+        chunk({ reasoning_content: "r2" }),
+        chunk({ content: "t2" }, "stop"),
+      ],
+      DS,
+    );
+    expect(types(events)).toEqual([
+      "reasoning-delta",
+      "reasoning-end",
+      "text-delta",
+      "reasoning-delta",
+      "reasoning-end",
+      "text-delta",
+      "finish",
+    ]);
+  });
+});

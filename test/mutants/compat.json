@@ -325,15 +325,15 @@
     "id": "X47",
     "file": "src/compat/stream.ts",
     "description": "quirk finish map ignored",
-    "find": "    const mapped = this.#quirks.finishReasons[this.#finish] ?? STANDARD[this.#finish] ?? \"other\";",
-    "replace": "    const mapped = STANDARD[this.#finish] ?? \"other\";"
+    "find": "own(this.#quirks.finishReasons, this.#finish) ?? own(STANDARD, this.#finish) ?? \"other\";",
+    "replace": "own(STANDARD, this.#finish) ?? \"other\";"
   },
   {
     "id": "X48",
     "file": "src/compat/stream.ts",
     "description": "unknown finish reason maps to stop",
-    "find": "STANDARD[this.#finish] ?? \"other\";",
-    "replace": "STANDARD[this.#finish] ?? \"stop\";"
+    "find": "own(STANDARD, this.#finish) ?? \"other\";",
+    "replace": "own(STANDARD, this.#finish) ?? \"stop\";"
   },
   {
     "id": "X49",
@@ -514,7 +514,77 @@
     "id": "X74",
     "file": "src/deepseek/index.ts",
     "description": "body ignored",
-    "find": "    return { ...fields, ...(options.body as Record<string, unknown> | undefined) };",
+    "find": "    return { ...(options.body as Record<string, unknown> | undefined), ...fields };",
     "replace": "    return fields;"
+  },
+  {
+    "id": "X75",
+    "file": "src/compat/stream.ts",
+    "description": "empty finish_reason counted as a finish",
+    "find": " && choice.finish_reason !== \"\") {",
+    "replace": ") {"
+  },
+  {
+    "id": "X76",
+    "file": "src/compat/stream.ts",
+    "description": "invalid token counts accepted",
+    "find": "typeof value === \"number\" && Number.isSafeInteger(value) && value >= 0 ? value : undefined;",
+    "replace": "typeof value === \"number\" ? value : undefined;"
+  },
+  {
+    "id": "X77",
+    "file": "src/compat/stream.ts",
+    "description": "choice without index ignored",
+    "find": "(c.index === 0 || c.index === undefined)",
+    "replace": "c.index === 0"
+  },
+  {
+    "id": "X78",
+    "file": "src/compat/stream.ts",
+    "description": "tool calls not sorted by index",
+    "find": "[...this.#calls.entries()].sort(([a], [b]) => a - b);",
+    "replace": "[...this.#calls.entries()];"
+  },
+  {
+    "id": "X79",
+    "file": "src/compat/stream.ts",
+    "description": "finish lookup reads inherited keys",
+    "find": "Object.hasOwn(table, key) ? table[key] : undefined;",
+    "replace": "table[key];"
+  },
+  {
+    "id": "X80",
+    "file": "src/compat/request.ts",
+    "description": "__proto__ body key not skipped",
+    "find": "    if (key === \"__proto__\" || value === undefined) continue;",
+    "replace": "    if (value === undefined) continue;"
+  },
+  {
+    "id": "X81",
+    "file": "src/compat/request.ts",
+    "description": "undefined tool arguments sent",
+    "find": "arguments: args ?? \"{}\" },",
+    "replace": "arguments: args },"
+  },
+  {
+    "id": "X82",
+    "file": "src/compat/errors.ts",
+    "description": "objects without an error key treated as SDK errors",
+    "find": " && \"status\" in error && \"error\" in error;",
+    "replace": " && \"status\" in error;"
+  },
+  {
+    "id": "X83",
+    "file": "src/compat/quirks.ts",
+    "description": "default options mapper sends everything",
+    "find": "  (options.body as Record<string, unknown> | undefined) ?? {};",
+    "replace": "  ({ ...(options.body as Record<string, unknown> | undefined), ...options });"
+  },
+  {
+    "id": "X84",
+    "file": "src/deepseek/index.ts",
+    "description": "body beats typed options",
+    "find": "    return { ...(options.body as Record<string, unknown> | undefined), ...fields };",
+    "replace": "    return { ...fields, ...(options.body as Record<string, unknown> | undefined) };"
   }
 ]

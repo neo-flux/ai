@@ -4,6 +4,7 @@ import { APIConnectionError, APIError } from "openai";
 import { deepseek } from "../../src/deepseek/index.ts";
 import { type AIError, type AIErrorCode, toAIError } from "../../src/errors.ts";
 import { generate } from "../../src/generate.ts";
+import { fakeAdapter } from "../../src/testing/index.ts";
 
 // Hand-built shapes for errors that can't be triggered safely, so they are not in fixtures/.
 // Statuses: https://api-docs.deepseek.com/quick_start/error_codes (checked 2026-11-17).
@@ -95,3 +96,61 @@ describe("deepseek finish reasons that mean the answer was cut off", () => {
 });
 
 const pick = (e: AIError) => ({ code: e.code, failover: e.failover });
+
+describe("deepseek cut-off answers and failover", () => {
+  const chain = (withUsage: boolean) => {
+    const client = {
+      chat: {
+        completions: {
+          create: async () =>
+            (async function* () {
+              yield {
+                choices: [
+                  {
+                    index: 0,
+                    delta: { content: "" },
+                    finish_reason: "insufficient_system_resource",
+                  },
+                ],
+                ...(withUsage ? { usage: { prompt_tokens: 5, completion_tokens: 0 } } : {}),
+              };
+            })(),
+        },
+      },
+    } as unknown as OpenAI;
+    return deepseek({ client })("deepseek-flash");
+  };
+  const next = () =>
+    fakeAdapter([
+      {
+        events: [
+          { type: "text-delta", text: "b" },
+          { type: "finish", reason: "stop" },
+        ],
+      },
+    ]);
+
+  test("with nothing delivered yet, the next model answers", async () => {
+    const b = next();
+    const r = await generate({
+      model: [chain(false), b("b")],
+      messages: [{ role: "user", content: "q" }],
+    });
+    expect(r.modelRef.id).toBe("b");
+  });
+
+  // A usage event counts as delivered (docs/events.md), so metering sees the partial spend and the
+  // call ends with an error instead of switching models.
+  test("once its usage event is delivered, the error ends the call", async () => {
+    const b = next();
+    const err = await generate({
+      model: [chain(true), b("b")],
+      messages: [{ role: "user", content: "q" }],
+    }).catch((e: unknown) => e);
+    expect(err).toMatchObject({
+      code: "provider_unavailable",
+      providerCode: "insufficient_system_resource",
+    });
+    expect(b.calls).toHaveLength(0);
+  });
+});

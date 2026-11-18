@@ -42,7 +42,8 @@ const QUIRKS: CompatQuirks = {
     const fields: Record<string, unknown> = {};
     if (options.thinking !== undefined) fields.thinking = { type: options.thinking };
     if (options.reasoningEffort !== undefined) fields.reasoning_effort = options.reasoningEffort;
-    return { ...fields, ...(options.body as Record<string, unknown> | undefined) };
+    // The typed options win over the same keys in `body`.
+    return { ...(options.body as Record<string, unknown> | undefined), ...fields };
   },
 };
 

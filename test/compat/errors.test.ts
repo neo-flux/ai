@@ -86,3 +86,16 @@ describe("classifyCompatError", () => {
     expect(map(new APIConnectionTimeoutError(), c).code).toBe("timeout");
   });
 });
+
+describe("classifyCompatError: audit follow-ups", () => {
+  test("an object with a status key but no error key is not treated as an SDK error", () => {
+    const shape = {
+      status: undefined,
+      type: undefined,
+      code: undefined,
+      name: undefined,
+      headers: undefined,
+    };
+    expect(classify(shape, { status: undefined, message: "Request timed out." })).toBeUndefined();
+  });
+});

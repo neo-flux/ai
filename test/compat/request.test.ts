@@ -339,3 +339,34 @@ describe("toChatParams: tools, output and options", () => {
     invalid(() => params({ messages: [user("q")] }, {}, { body: "x" }));
   });
 });
+
+describe("toChatParams: audit follow-ups", () => {
+  test("the default options mapper sends body fields and nothing else", () => {
+    const out = params({ messages: [user("q")] }, {}, { body: { top_k: 40 }, other: 1 });
+    expect(out).toEqual({ ...base, messages: [{ role: "user", content: "q" }], top_k: 40 });
+  });
+
+  test("a __proto__ key in a JSON-parsed body is skipped and can't change the prototype", () => {
+    const body = JSON.parse('{"__proto__": {"polluted": true}, "safe": 1}');
+    const out = params({ messages: [user("q")] }, {}, { body });
+    expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+    expect(out.safe).toBe(1);
+    expect(Object.hasOwn(out, "__proto__")).toBe(false);
+  });
+
+  test("a tool call with undefined input sends {} as its arguments", () => {
+    const out = params({
+      messages: [
+        user("q"),
+        {
+          role: "assistant",
+          content: [{ type: "tool-call", id: "c1", name: "f", input: undefined }],
+        },
+        { role: "tool", toolCallId: "c1", toolName: "f", content: "r" },
+      ],
+    });
+    const calls = (out.messages as { tool_calls?: { function: { arguments: unknown } }[] }[])[1]
+      ?.tool_calls;
+    expect(calls?.[0]?.function.arguments).toBe("{}");
+  });
+});
