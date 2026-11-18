@@ -33,6 +33,9 @@ const model = fake("any-id");
 `parseFixture(text)` reads a recorded fixture, and `replayClient(fixture)` returns a stand-in SDK client that serves the recorded stream. Cast it to the SDK type and pass it to an adapter:
 
 ```ts
+import { readFile } from "node:fs/promises";
+import OpenAI from "openai";
+import { openai } from "@neoflux/ai/openai";
 import { parseFixture, replayClient } from "@neoflux/ai/testing";
 
 const client = replayClient(parseFixture(await readFile("text.jsonl", "utf8")));
@@ -40,4 +43,4 @@ const model = openai({ client: client as unknown as OpenAI })("gpt-5.4-mini");
 // client.calls[0].params is the request the adapter sent
 ```
 
-Replay behaves like the SDKs on abort: the stream ends without an error. Recorded errors are thrown in the SDK's shape. The fixture format is described in [fixtures.md](fixtures.md), and it's unstable in 0.x.
+Replay behaves like the SDKs on abort. Aborting mid-stream ends the stream without an error, and a signal that is already aborted makes `create()` reject the way the SDK does. By default every chunk is served at once, so an abort scheduled with a timer can only land before or after the whole stream. Pass `replayClient(fixture, { chunkDelayMs })` to space the chunks out. Recorded errors are thrown in the SDK's shape. The fixture format is described in [fixtures.md](fixtures.md), and it's unstable in 0.x.
