@@ -1,0 +1,429 @@
+[
+  {
+    "id": "A1",
+    "file": "src/anthropic/request.ts",
+    "description": "system not set",
+    "find": "  if (system.length > 0) params.system = system.join(\"\\n\\n\");\n",
+    "replace": ""
+  },
+  {
+    "id": "A2",
+    "file": "src/anthropic/request.ts",
+    "description": "system joined without a blank line",
+    "find": "system.join(\"\\n\\n\")",
+    "replace": "system.join(\"\")"
+  },
+  {
+    "id": "A3",
+    "file": "src/anthropic/request.ts",
+    "description": "max_tokens ignores the request",
+    "find": "max_tokens: request.maxOutputTokens ?? maxTokens",
+    "replace": "max_tokens: maxTokens"
+  },
+  {
+    "id": "A4",
+    "file": "src/anthropic/request.ts",
+    "description": "maxTokens option ignored",
+    "find": "typeof options.maxTokens === \"number\" ? options.maxTokens : DEFAULT_MAX_TOKENS",
+    "replace": "DEFAULT_MAX_TOKENS"
+  },
+  {
+    "id": "A5",
+    "file": "src/anthropic/request.ts",
+    "description": "default max_tokens changed",
+    "find": "export const DEFAULT_MAX_TOKENS = 4096;",
+    "replace": "export const DEFAULT_MAX_TOKENS = 1024;"
+  },
+  {
+    "id": "A6",
+    "file": "src/anthropic/request.ts",
+    "description": "unsupported image types accepted",
+    "find": "  if (mediaType === undefined || !IMAGE_TYPES.includes(mediaType)) {",
+    "replace": "  if (mediaType === undefined) {"
+  },
+  {
+    "id": "A7",
+    "file": "src/anthropic/request.ts",
+    "description": "non-base64 data URL accepted",
+    "find": "      if (match === null) throw invalid(PROVIDER, \"image data URLs must be base64\");",
+    "replace": "      if (match === null) return image(\"image/png\", part.data);"
+  },
+  {
+    "id": "A8",
+    "file": "src/anthropic/request.ts",
+    "description": "unsupported files accepted",
+    "find": "        throw invalid(PROVIDER, \"files must be PDF or plain text\");",
+    "replace": "        doc = { type: \"document\" };"
+  },
+  {
+    "id": "A9",
+    "file": "src/anthropic/request.ts",
+    "description": "document title dropped",
+    "find": "      if (part.filename !== undefined) doc.title = part.filename;\n",
+    "replace": ""
+  },
+  {
+    "id": "A10",
+    "file": "src/anthropic/request.ts",
+    "description": "own metadata check reads inherited keys",
+    "find": "  if (metadata === undefined || !Object.hasOwn(metadata, PROVIDER)) return undefined;",
+    "replace": "  if (metadata === undefined) return undefined;"
+  },
+  {
+    "id": "A11",
+    "file": "src/anthropic/request.ts",
+    "description": "non-string signature accepted",
+    "find": "      if (typeof ours?.signature === \"string\") {",
+    "replace": "      if (ours?.signature !== undefined) {"
+  },
+  {
+    "id": "A12",
+    "file": "src/anthropic/request.ts",
+    "description": "thinking block not sent back",
+    "find": "        blocks.push({ type: \"thinking\", thinking: part.text, signature: ours.signature });\n",
+    "replace": ""
+  },
+  {
+    "id": "A13",
+    "file": "src/anthropic/request.ts",
+    "description": "redacted thinking not sent back",
+    "find": "        blocks.push({ type: \"redacted_thinking\", data: ours.redacted });\n",
+    "replace": ""
+  },
+  {
+    "id": "A14",
+    "file": "src/anthropic/request.ts",
+    "description": "string tool input not parsed",
+    "find": "  if (typeof input !== \"string\") return isRecord(input) ? input : {};",
+    "replace": "  if (typeof input !== \"string\") return isRecord(input) ? input : {};\n  return {};"
+  },
+  {
+    "id": "A15",
+    "file": "src/anthropic/request.ts",
+    "description": "non-object tool input sent",
+    "find": "    return isRecord(parsed) ? parsed : {};",
+    "replace": "    return parsed;"
+  },
+  {
+    "id": "A16",
+    "file": "src/anthropic/request.ts",
+    "description": "tool results not grouped",
+    "find": "      if (results === undefined) {",
+    "replace": "      if (true) {"
+  },
+  {
+    "id": "A17",
+    "file": "src/anthropic/request.ts",
+    "description": "group not reset after another message",
+    "find": "    results = undefined;\n    if (m.role === \"system\") continue;",
+    "replace": "    if (m.role === \"system\") continue;"
+  },
+  {
+    "id": "A18",
+    "file": "src/anthropic/request.ts",
+    "description": "is_error dropped",
+    "find": "      if (m.isError === true) result.is_error = true;\n",
+    "replace": ""
+  },
+  {
+    "id": "A19",
+    "file": "src/anthropic/request.ts",
+    "description": "empty assistant turns sent",
+    "find": "    if (content.length === 0) continue;\n",
+    "replace": ""
+  },
+  {
+    "id": "A20",
+    "file": "src/anthropic/request.ts",
+    "description": "required maps to auto",
+    "find": "  return { type: choice === \"required\" ? \"any\" : choice };",
+    "replace": "  return { type: choice === \"required\" ? \"auto\" : choice };"
+  },
+  {
+    "id": "A21",
+    "file": "src/anthropic/request.ts",
+    "description": "named tool choice wrong shape",
+    "find": "  if (typeof choice !== \"string\") return { type: \"tool\", name: choice.name };",
+    "replace": "  if (typeof choice !== \"string\") return { type: \"any\" };"
+  },
+  {
+    "id": "A22",
+    "file": "src/anthropic/request.ts",
+    "description": "tool description dropped",
+    "find": "      if (tool.description !== undefined) out.description = tool.description;\n",
+    "replace": ""
+  },
+  {
+    "id": "A23",
+    "file": "src/anthropic/request.ts",
+    "description": "tool $schema kept",
+    "find": "      out.input_schema = withoutSchemaKey(tool.inputSchema);",
+    "replace": "      out.input_schema = tool.inputSchema;"
+  },
+  {
+    "id": "A24",
+    "file": "src/anthropic/request.ts",
+    "description": "effort dropped",
+    "find": "  if (options.effort !== undefined) outputConfig.effort = options.effort;\n",
+    "replace": ""
+  },
+  {
+    "id": "A25",
+    "file": "src/anthropic/request.ts",
+    "description": "structured output dropped",
+    "find": "    outputConfig.format = { type: \"json_schema\", schema: withoutSchemaKey(request.output.schema) };",
+    "replace": "    void 0;"
+  },
+  {
+    "id": "A26",
+    "file": "src/anthropic/request.ts",
+    "description": "empty output_config sent",
+    "find": "  if (Object.keys(outputConfig).length > 0) params.output_config = outputConfig;",
+    "replace": "  params.output_config = outputConfig;"
+  },
+  {
+    "id": "A27",
+    "file": "src/anthropic/request.ts",
+    "description": "temperature dropped",
+    "find": "  if (request.temperature !== undefined) params.temperature = request.temperature;\n",
+    "replace": ""
+  },
+  {
+    "id": "A28",
+    "file": "src/anthropic/request.ts",
+    "description": "reserved body keys accepted",
+    "find": "    if (RESERVED_KEYS.includes(key)) throw invalid(PROVIDER, `body may not set \"${key}\"`);\n",
+    "replace": ""
+  },
+  {
+    "id": "A29",
+    "file": "src/anthropic/request.ts",
+    "description": "body overrides typed thinking",
+    "find": "  if (options.thinking !== undefined) params.thinking = options.thinking;",
+    "replace": "  if (options.thinking !== undefined) params.thinking ??= options.thinking;"
+  },
+  {
+    "id": "A30",
+    "file": "src/anthropic/stream.ts",
+    "description": "empty text deltas emitted",
+    "find": "      const text = nonEmpty(delta.text);\n      if (text !== undefined) out.push({ type: \"text-delta\", text });",
+    "replace": "      const text = delta.text as string;\n      if (text !== undefined) out.push({ type: \"text-delta\", text });"
+  },
+  {
+    "id": "A31",
+    "file": "src/anthropic/stream.ts",
+    "description": "thinking deltas ignored",
+    "find": "      block.emitted = true;\n      out.push({ type: \"reasoning-delta\", text });\n    } else if",
+    "replace": "    } else if"
+  },
+  {
+    "id": "A32",
+    "file": "src/anthropic/stream.ts",
+    "description": "signature deltas not appended",
+    "find": "      if (typeof delta.signature === \"string\") block.signature += delta.signature;",
+    "replace": "      if (typeof delta.signature === \"string\") block.signature = delta.signature;"
+  },
+  {
+    "id": "A33",
+    "file": "src/anthropic/stream.ts",
+    "description": "omitted thinking gets no opening delta",
+    "find": "      if (!block.emitted) out.push({ type: \"reasoning-delta\", text: \"\" });\n",
+    "replace": ""
+  },
+  {
+    "id": "A34",
+    "file": "src/anthropic/stream.ts",
+    "description": "reasoning-end without the signature",
+    "find": "        providerMetadata: { [PROVIDER]: { signature: block.signature } },\n",
+    "replace": ""
+  },
+  {
+    "id": "A35",
+    "file": "src/anthropic/stream.ts",
+    "description": "thinking text in block start dropped",
+    "find": "        if (text !== undefined) {\n          thinking.emitted = true;",
+    "replace": "        if (false) {\n          thinking.emitted = true;"
+  },
+  {
+    "id": "A36",
+    "file": "src/anthropic/stream.ts",
+    "description": "redacted thinking metadata dropped",
+    "find": "          providerMetadata: { [PROVIDER]: { redacted: block.data } },\n",
+    "replace": ""
+  },
+  {
+    "id": "A37",
+    "file": "src/anthropic/stream.ts",
+    "description": "tool input deltas ignored",
+    "find": "      if (json !== undefined) out.push({ type: \"tool-call-delta\", id: block.id, inputDelta: json });",
+    "replace": "      void json;"
+  },
+  {
+    "id": "A38",
+    "file": "src/anthropic/stream.ts",
+    "description": "tool calls not ended",
+    "find": "      this.#ended++;\n      out.push({ type: \"tool-call-end\", id: block.id });",
+    "replace": "      this.#ended++;"
+  },
+  {
+    "id": "A39",
+    "file": "src/anthropic/stream.ts",
+    "description": "reused tool id started twice",
+    "find": "if (id === undefined || name === undefined || this.#started.has(id)) return;",
+    "replace": "if (id === undefined || name === undefined) return;"
+  },
+  {
+    "id": "A40",
+    "file": "src/anthropic/stream.ts",
+    "description": "open blocks not closed at the end",
+    "find": "    for (const index of [...this.#blocks.keys()]) this.#blockStop(index, events);\n",
+    "replace": ""
+  },
+  {
+    "id": "A41",
+    "file": "src/anthropic/stream.ts",
+    "description": "missing message_stop treated as stop",
+    "find": "    if (!this.#stopped) {",
+    "replace": "    if (false) {"
+  },
+  {
+    "id": "A42",
+    "file": "src/anthropic/stream.ts",
+    "description": "max_tokens not length",
+    "find": "  max_tokens: \"length\",",
+    "replace": "  max_tokens: \"other\","
+  },
+  {
+    "id": "A43",
+    "file": "src/anthropic/stream.ts",
+    "description": "refusal not content-filter",
+    "find": "  refusal: \"content-filter\",",
+    "replace": "  refusal: \"other\","
+  },
+  {
+    "id": "A44",
+    "file": "src/anthropic/stream.ts",
+    "description": "stop reason lookup reads inherited keys",
+    "find": "reason !== undefined && Object.hasOwn(STOP, reason)",
+    "replace": "reason !== undefined && reason in STOP"
+  },
+  {
+    "id": "A45",
+    "file": "src/anthropic/stream.ts",
+    "description": "tool-calls kept without a call",
+    "find": "mapped === \"tool-calls\" && this.#ended === 0 ? \"other\" : mapped",
+    "replace": "mapped"
+  },
+  {
+    "id": "A46",
+    "file": "src/anthropic/stream.ts",
+    "description": "input does not add cache back",
+    "find": "      inputIncludesCached: false,",
+    "replace": "      inputIncludesCached: true,"
+  },
+  {
+    "id": "A47",
+    "file": "src/anthropic/stream.ts",
+    "description": "cache reads not mapped",
+    "find": "      cachedInputTokens: count(raw.cache_read_input_tokens),",
+    "replace": "      cachedInputTokens: undefined,"
+  },
+  {
+    "id": "A48",
+    "file": "src/anthropic/stream.ts",
+    "description": "cache writes not mapped",
+    "find": "      cacheWriteTokens: count(raw.cache_creation_input_tokens),",
+    "replace": "      cacheWriteTokens: undefined,"
+  },
+  {
+    "id": "A49",
+    "file": "src/anthropic/stream.ts",
+    "description": "thinking tokens not mapped",
+    "find": "      reasoningTokens: count(output.thinking_tokens),",
+    "replace": "      reasoningTokens: undefined,"
+  },
+  {
+    "id": "A50",
+    "file": "src/anthropic/stream.ts",
+    "description": "null usage erases values",
+    "find": "      if (value !== undefined) (merged as unknown as Record<string, number>)[key] = value;",
+    "replace": "      (merged as unknown as Record<string, number | undefined>)[key] = value;"
+  },
+  {
+    "id": "A51",
+    "file": "src/anthropic/stream.ts",
+    "description": "invalid token counts accepted",
+    "find": "  typeof value === \"number\" && Number.isSafeInteger(value) && value >= 0 ? value : undefined;",
+    "replace": "  typeof value === \"number\" ? value : undefined;"
+  },
+  {
+    "id": "A52",
+    "file": "src/anthropic/stream.ts",
+    "description": "error event ignored",
+    "find": "      case \"error\":\n        throw streamError(event);",
+    "replace": "      case \"error\":\n        break;"
+  },
+  {
+    "id": "A53",
+    "file": "src/anthropic/stream.ts",
+    "description": "stream error type dropped",
+    "find": "    type: typeof inner.type === \"string\" ? inner.type : undefined,",
+    "replace": "    type: undefined,"
+  },
+  {
+    "id": "A54",
+    "file": "src/anthropic/stream.ts",
+    "description": "abort after the loop not thrown",
+    "find": "  if (signal.aborted) throw signal.reason;\n",
+    "replace": ""
+  },
+  {
+    "id": "A55",
+    "file": "src/anthropic/errors.ts",
+    "description": "billing_error not billing",
+    "find": "  billing_error: { code: \"billing\" },",
+    "replace": "  billing_error: { code: \"auth\" },"
+  },
+  {
+    "id": "A56",
+    "file": "src/anthropic/errors.ts",
+    "description": "overloaded not provider_unavailable",
+    "find": "  overloaded_error: { code: \"provider_unavailable\" },",
+    "replace": "  overloaded_error: { code: \"invalid_request\" },"
+  },
+  {
+    "id": "A57",
+    "file": "src/anthropic/errors.ts",
+    "description": "timeout_error not timeout",
+    "find": "  timeout_error: { code: \"timeout\" },",
+    "replace": "  timeout_error: { code: \"provider_unavailable\" },"
+  },
+  {
+    "id": "A58",
+    "file": "src/anthropic/errors.ts",
+    "description": "type lookup reads inherited keys",
+    "find": "shape.type !== undefined && Object.hasOwn(BY_TYPE, shape.type)",
+    "replace": "shape.type !== undefined && shape.type in BY_TYPE"
+  },
+  {
+    "id": "A59",
+    "file": "src/anthropic/index.ts",
+    "description": "signal not passed to create()",
+    "find": "        { signal: ctx.signal },",
+    "replace": "        {},"
+  },
+  {
+    "id": "A60",
+    "file": "src/anthropic/index.ts",
+    "description": "client shape not checked",
+    "find": "  if (typeof create !== \"function\") {",
+    "replace": "  if (false) {"
+  },
+  {
+    "id": "A61",
+    "file": "src/anthropic/index.ts",
+    "description": "classifyError not wired",
+    "find": "    classifyError: classifyAnthropicError,",
+    "replace": "    classifyError: undefined,"
+  }
+]

@@ -277,3 +277,19 @@ describe("MessagesTranslator: errors and abort", () => {
     expect(types(seen)).toEqual(["text-delta"]);
   });
 });
+
+describe("MessagesTranslator: mutation follow-ups", () => {
+  test("negative or fractional token counts are dropped", () => {
+    const events = run([
+      start({ input_tokens: -1, output_tokens: 1.5 }),
+      ...text(0, ["x"]),
+      messageDelta("end_turn", {}),
+      end,
+    ]);
+    const u = (
+      events.find((e) => e.type === "usage") as unknown as { usage: Record<string, unknown> }
+    ).usage;
+    expect(u.inputTokens).toBeUndefined();
+    expect(u.outputTokens).toBeUndefined();
+  });
+});

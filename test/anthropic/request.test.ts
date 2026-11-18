@@ -303,3 +303,34 @@ describe("toMessagesParams: tools, output and options", () => {
     });
   });
 });
+
+describe("toMessagesParams: mutation follow-ups", () => {
+  test("tool input that parses to a non-object is sent as {}", () => {
+    const out = params({
+      messages: [
+        q,
+        asst([{ type: "tool-call", id: "a", name: "f", input: "[1,2]" }]),
+        { role: "tool", toolCallId: "a", toolName: "f", content: "r" },
+      ],
+    });
+    const blocks = (out.messages as { content: { input?: unknown }[] }[])[1]?.content ?? [];
+    expect(blocks[0]?.input).toEqual({});
+  });
+
+  test("a later tool group starts a new user message", () => {
+    const out = params({
+      messages: [
+        q,
+        asst([{ type: "tool-call", id: "a", name: "f", input: {} }]),
+        { role: "tool", toolCallId: "a", toolName: "f", content: "r1" },
+        asst([{ type: "tool-call", id: "b", name: "f", input: {} }]),
+        { role: "tool", toolCallId: "b", toolName: "f", content: "r2" },
+      ],
+    });
+    expect((out.messages as unknown[]).slice(2)).toEqual([
+      { role: "user", content: [{ type: "tool_result", tool_use_id: "a", content: "r1" }] },
+      { role: "assistant", content: [{ type: "tool_use", id: "b", name: "f", input: {} }] },
+      { role: "user", content: [{ type: "tool_result", tool_use_id: "b", content: "r2" }] },
+    ]);
+  });
+});
