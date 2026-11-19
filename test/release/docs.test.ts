@@ -30,14 +30,26 @@ describe("repository documents", () => {
     const guide = read("docs/releasing.md");
     for (const topic of [
       "trusted publisher",
-      "required reviewers",
+      "required reviewer",
       "tag ruleset",
+      "bypass",
+      "private vulnerability reporting",
       "Workers",
       "data terms",
     ]) {
       expect({ topic, present: guide.includes(topic) }).toEqual({ topic, present: true });
     }
-    expect(guide.match(/TODO: confirm/g)?.length).toBeGreaterThanOrEqual(5);
+    // Still open: whether npm accepts a trusted publisher before the first version exists.
+    expect(guide.match(/TODO: confirm/g)).toHaveLength(1);
+    // Each provider's terms are linked, not summarized.
+    for (const host of [
+      "developers.openai.com",
+      "privacy.claude.com",
+      "cdn.deepseek.com",
+      "www.alibabacloud.com",
+    ]) {
+      expect({ host, linked: guide.includes(`https://${host}`) }).toEqual({ host, linked: true });
+    }
   });
 
   test("dependabot watches actions and bun dev dependencies", () => {
