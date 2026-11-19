@@ -2,7 +2,7 @@
 
 Thanks for helping. This is a small library with strict rules, so please read this first.
 
-Issues and pull requests: https://github.com/neo-flux/ai (the GitHub mirror). TODO: confirm
+Issues and pull requests: on GitHub, at https://github.com/neo-flux/ai. The canonical repository is on Forgejo and push-mirrors to GitHub, so merged changes are applied on Forgejo and reach GitHub through the mirror.
 
 ## Setup
 
